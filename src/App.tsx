@@ -364,7 +364,7 @@ export default function App() {
       if (savedUser) {
         const u = JSON.parse(savedUser) as User;
         setUser(u);
-        loadProposals(u.id);
+        loadProposals(u.id, u.role);
         
         // Refresh manager profile
         const resp = await fetch(`/api/managers/${u.id}`);
@@ -409,9 +409,10 @@ export default function App() {
     init();
   }, []);
 
-  const loadProposals = async (uid: string) => {
+  const loadProposals = async (uid: string, role?: string) => {
     try {
-      const resp = await fetch(`/api/proposals?managerId=${uid}`);
+      const url = role === 'admin' ? '/api/proposals' : `/api/proposals?managerId=${uid}`;
+      const resp = await fetch(url);
       if (resp.ok) {
         setProposals(await resp.json());
       }
@@ -526,7 +527,7 @@ export default function App() {
         setCurrentProposalId(result.id);
         alert('КП успешно сохранено!');
       }
-      loadProposals(user.id);
+      loadProposals(user.id, user.role);
     } catch (e) {
       console.error(e);
     }
@@ -538,7 +539,7 @@ export default function App() {
     
     try {
       await fetch(`/api/proposals/${id}`, { method: 'DELETE' });
-      loadProposals(user.id);
+      loadProposals(user.id, user.role);
     } catch (e) {
       console.error(e);
     }
@@ -557,7 +558,7 @@ export default function App() {
         setUser(userObj);
         localStorage.setItem('proposal_user', JSON.stringify(userObj));
         setManager(u);
-        loadProposals(u.id);
+        loadProposals(u.id, u.role);
       } else {
         const err = await resp.json();
         alert(err.error || 'Ошибка входа');
@@ -753,7 +754,7 @@ const Dashboard = ({ proposals, user, onLogin, onLogout, onCreate, onView, onEdi
                   className="flex items-center gap-4 bg-white p-2 pl-4 rounded-xl shadow-sm border border-doc-slate-100 font-bold"
                 >
                   <div className="text-right">
-                    <p className="text-sm font-black text-doc-slate-800 leading-none">{user.displayName}</p>
+                    <p className="text-sm font-black text-doc-slate-800 leading-none">{user.name}</p>
                     <p className="text-[10px] text-doc-slate-400 font-bold uppercase">{user.email}</p>
                   </div>
                   <button onClick={onLogout} title="Выйти" className="p-2 text-doc-slate-400 hover:text-red-500 transition-colors">
@@ -863,6 +864,7 @@ const Dashboard = ({ proposals, user, onLogin, onLogout, onCreate, onView, onEdi
                 <thead>
                   <tr className="bg-doc-slate-50 text-[11px] font-black uppercase text-doc-slate-400 tracking-wider">
                     <th className="p-5 pl-8">Клиент</th>
+                    {user?.role === 'admin' && <th className="p-5">Менеджер</th>}
                     <th className="p-5">Конфигурация</th>
                     <th className="p-5">Дата создания</th>
                     <th className="p-5">Просмотры</th>
@@ -879,6 +881,11 @@ const Dashboard = ({ proposals, user, onLogin, onLogout, onCreate, onView, onEdi
                           <Share2 className="w-3.5 h-3.5" /> ID: {p.id}
                         </p>
                       </td>
+                      {user?.role === 'admin' && (
+                        <td className="p-5">
+                          <p className="text-xs font-black text-brand-blue uppercase tracking-tight">{p.managerName || '—'}</p>
+                        </td>
+                      )}
                       <td className="p-5">
                         <div className="flex flex-wrap gap-1.5">
                           {p.items?.map((item: any, idx: number) => (

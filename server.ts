@@ -301,10 +301,15 @@ app.delete('/api/managers/:id', (req, res) => {
 app.get('/api/proposals', (req, res) => {
   const { managerId } = req.query;
   let proposals;
+  const baseQuery = `
+    SELECT p.*, m.name as managerName 
+    FROM proposals p 
+    LEFT JOIN managers m ON p.managerId = m.id
+  `;
   if (managerId) {
-    proposals = db.prepare('SELECT * FROM proposals WHERE managerId = ? ORDER BY createdAt DESC').all(managerId);
+    proposals = db.prepare(`${baseQuery} WHERE p.managerId = ? ORDER BY p.createdAt DESC`).all(managerId);
   } else {
-    proposals = db.prepare('SELECT * FROM proposals ORDER BY createdAt DESC').all();
+    proposals = db.prepare(`${baseQuery} ORDER BY p.createdAt DESC`).all();
   }
   res.json((proposals as any[]).map(p => ({
     ...p,
