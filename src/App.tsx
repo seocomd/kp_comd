@@ -768,36 +768,39 @@ const Dashboard = ({ proposals, user, onLogin, onLogout, onCreate, onView, onEdi
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   onSubmit={handleSubmit}
-                  className="flex items-center gap-2"
+                  className="flex flex-col items-end gap-2"
                 >
-                  <input
-                    autoFocus
-                    type="email"
-                    placeholder="Email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    className="bg-white border border-doc-slate-200 px-4 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-blue/20 w-48 shadow-sm"
-                  />
-                  <input
-                    type="password"
-                    placeholder="Пароль"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    className="bg-white border border-doc-slate-200 px-4 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-blue/20 w-40 shadow-sm"
-                  />
-                  <button 
-                    type="submit"
-                    className="bg-brand-blue text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg hover:opacity-90 transition-all uppercase"
-                  >
-                    OK
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setShowInput(false)}
-                    className="text-doc-slate-400 hover:text-doc-slate-600 px-2 font-bold text-xs uppercase"
-                  >
-                    Отмена
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      type="email"
+                      placeholder="Email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      className="bg-white border border-doc-slate-200 px-4 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-blue/20 w-48 shadow-sm"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Пароль"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      className="bg-white border border-doc-slate-200 px-4 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-blue/20 w-40 shadow-sm"
+                    />
+                    <button 
+                      type="submit"
+                      className="bg-brand-blue text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg hover:opacity-90 transition-all uppercase"
+                    >
+                      OK
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setShowInput(false)}
+                      className="text-doc-slate-400 hover:text-doc-slate-600 px-2 font-bold text-xs uppercase"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-doc-slate-400 font-bold uppercase tracking-tight">Регистрация возможна только администратором</p>
                 </motion.form>
               ) : (
                 <motion.button 

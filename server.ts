@@ -226,29 +226,16 @@ app.get('/api/specs', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   const manager = db.prepare('SELECT * FROM managers WHERE email = ?').get(email) as any;
-  if (manager) {
-    if (manager.password && manager.password !== password) {
-      return res.status(401).json({ error: 'Неверный пароль' });
-    }
-    res.json(manager);
-  } else {
-    // For demo/simplicity, create manager if not exists (only if no password check requested or first time)
-    // Actually, if we have password field, we should probably stop auto-creating without password
-    const id = Math.random().toString(36).substring(2, 11);
-    const newManager = {
-      id,
-      name: email.split('@')[0],
-      email,
-      phone: '',
-      photoUrl: '',
-      password: password || '',
-      role: 'manager'
-    };
-    db.prepare('INSERT INTO managers (id, name, email, phone, photoUrl, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      newManager.id, newManager.name, newManager.email, newManager.phone, newManager.photoUrl, newManager.password, newManager.role
-    );
-    res.json(newManager);
+  
+  if (!manager) {
+    return res.status(401).json({ error: 'Пользователь не найден. Обратитесь к администратору.' });
   }
+
+  if (manager.password && manager.password !== password) {
+    return res.status(401).json({ error: 'Неверный пароль' });
+  }
+
+  res.json(manager);
 });
 
 app.get('/api/managers', (req, res) => {
