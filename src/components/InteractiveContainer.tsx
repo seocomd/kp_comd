@@ -59,10 +59,12 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
     const point = points.find(p => p.id === id);
     if (!point) return;
 
-    // Use info.point (current cursor position) relative to container rect
-    // This is the most reliable way to sync point to cursor under CSS zoom
+    if (rect.width === 0 || rect.height === 0) return;
+
     const newX = ((info.point.x - rect.left) / rect.width) * 100;
     const newY = ((info.point.y - rect.top) / rect.height) * 100;
+
+    if (isNaN(newX) || isNaN(newY)) return;
 
     setPoints(prev => prev.map(p => 
       p.id === id ? { 
@@ -71,9 +73,26 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
         y: Math.max(0, Math.min(100, newY)) 
       } : p
     ));
+  };
+
+  const handleDrag = (id: number, info: any) => {
+    if (!containerRef.current) return;
     
-    // Clear active point after drag to prevent stuck tooltips
-    setActivePoint(null);
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const newX = ((info.point.x - rect.left) / rect.width) * 100;
+    const newY = ((info.point.y - rect.top) / rect.height) * 100;
+
+    if (isNaN(newX) || isNaN(newY)) return;
+
+    setPoints(prev => prev.map(p => 
+      p.id === id ? { 
+        ...p, 
+        x: Math.max(0, Math.min(100, newX)), 
+        y: Math.max(0, Math.min(100, newY)) 
+      } : p
+    ));
   };
 
   const handleAddPoint = (e: React.MouseEvent) => {
@@ -113,7 +132,7 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
        {/* PDF / Print version (Static Image) */}
        <div className="hidden print:block w-full">
          <h3 className="text-[12px] font-black text-brand-blue uppercase mb-6 tracking-widest text-center italic">Устройство блок-контейнера «Север»</h3>
-         <img src="/Контейнер_Подписи.png" className="w-[180mm] mx-auto h-auto rounded-xl" alt="Контейнер в разрезе (схема)" />
+         <img src="/public/Контейнер_Подписи.png" className="w-[180mm] mx-auto h-auto rounded-xl" alt="Контейнер в разрезе (схема)" />
        </div>
 
        {/* Web / Interactive version */}
@@ -155,7 +174,7 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
              isEditing && "cursor-crosshair ring-2 ring-brand-blue/20"
            )}
          >
-            <img src="/Контейнер.png" className="w-full h-full object-contain pointer-events-none" alt="Схема" />
+            <img src="/public/Контейнер.png" className="w-full h-full object-contain pointer-events-none" alt="Схема" />
             
             <div className="absolute inset-0 pointer-events-none">
               {points.map((p) => (
@@ -163,15 +182,20 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
                   key={p.id}
                   drag={isEditing}
                   dragMomentum={false}
-                  onDragEnd={(e, info) => handleDragEnd(p.id, info)}
-                  // Reset motion values on every render to p.x/p.y position
-                  // This prevents "jumping" when state syncs after drag
+                  dragElastic={0}
+                  onDrag={(e, info) => handleDrag(p.id, info)}
+                  onDragEnd={(e, info) => {
+                    handleDragEnd(p.id, info);
+                    setActivePoint(null);
+                  }}
+                  // Always use absolute positioning for points to avoid jumps
+                  // The translate from motion.div will be 0 because we sync to state
                   animate={{ x: 0, y: 0 }}
                   transition={{ duration: 0 }}
                   className={cn(
                     "absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto",
                     isEditing ? "cursor-move" : "cursor-pointer",
-                    (activePoint === p.id || (isEditing && editingPointId === p.id)) ? "z-50" : "z-10"
+                    (activePoint === p.id || (isEditing && editingPointId === p.id)) ? "z-[100]" : "z-10"
                   )}
                   style={{ left: `${p.x}%`, top: `${p.y}%` }}
                   onMouseEnter={() => !isEditing && setActivePoint(p.id)}
@@ -310,7 +334,10 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
                                   min="10"
                                   max="32"
                                   value={p.size || 16}
-                                  onChange={(e) => handleUpdatePoint(p.id, { size: parseInt(e.target.value) })}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (!isNaN(val)) handleUpdatePoint(p.id, { size: val });
+                                  }}
                                   className="w-24 h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-brand-blue"
                                 />
                               </div>

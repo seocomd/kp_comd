@@ -268,7 +268,7 @@ const STANDARD_EQUIPMENT = [
 const Header = () => (
   <div className="relative w-full h-[180px] overflow-hidden mb-8 print:mb-4 group-container">
     <img 
-      src="/input_file_2.png" 
+      src="/public/input_file_2.png" 
       alt="Дизель Компания" 
       className="w-full h-full object-cover"
       referrerPolicy="no-referrer"
@@ -1842,7 +1842,7 @@ const ContactsBar = () => (
     <div className="flex items-center gap-6">
       <div className="w-40 h-10 flex items-center">
         <img 
-          src="/input_file_0.png" 
+          src="/public/input_file_0.png" 
           alt="Дизель Компания" 
           className="w-full h-auto object-contain"
           referrerPolicy="no-referrer"
@@ -1905,7 +1905,7 @@ const ControlPanelSection = () => (
         <div className="absolute inset-0 from-doc-slate-100 to-transparent" />
 <div className="w-full md:w-[350px] bg-white p-2 rounded border border-doc-slate-100 shadow-sm overflow-hidden">
             <img 
-              src="/input_file_3.png" 
+              src="/public/input_file_3.png" 
               alt="Контроллер" 
               className="w-full h-auto object-contain"
               referrerPolicy="no-referrer"
@@ -1992,7 +1992,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
           </div>
         </div>
         <img 
-          src="/input_file_4.png" 
+          src="/public/input_file_4.png" 
           alt="Technical View" 
           className="w-full h-auto rounded border border-doc-slate-100 shadow-sm" 
           referrerPolicy="no-referrer"
@@ -2117,7 +2117,7 @@ const OperatingCosts = ({ label, model, fuelPrice, toRate }: any) => (
           <p className="text-[7px] text-doc-slate-400 font-bold uppercase leading-none">Тариф: {fuelPrice} ₽/л</p>
         </div>
         <p className="text-[15px] font-black text-brand-blue italic leading-none whitespace-nowrap ml-4">
-          {(model.fuelCons75 * fuelPrice * 8000).toLocaleString('ru-RU')} <span className="text-[9px] opacity-70 not-italic uppercase ml-1">₽/год</span>
+          {((model.fuelCons75 || 0) * (fuelPrice || 0) * 8000).toLocaleString('ru-RU')} <span className="text-[9px] opacity-70 not-italic uppercase ml-1">₽/год</span>
         </p>
       </div>
       <div className="flex justify-between items-end">
@@ -2126,7 +2126,7 @@ const OperatingCosts = ({ label, model, fuelPrice, toRate }: any) => (
           <p className="text-[7px] text-doc-slate-400 font-bold uppercase leading-none">Запчасти + Расходники: {toRate} ₽/ч</p>
         </div>
         <p className="text-[15px] font-black text-brand-blue italic leading-none whitespace-nowrap ml-4">
-          {(toRate * 8000).toLocaleString('ru-RU')} <span className="text-[9px] opacity-70 not-italic uppercase ml-1">₽/год</span>
+          {((toRate || 0) * 8000).toLocaleString('ru-RU')} <span className="text-[9px] opacity-70 not-italic uppercase ml-1">₽/год</span>
         </p>
       </div>
     </div>
@@ -2154,7 +2154,7 @@ const SpecRow = ({ label, value }: { label: string, value: any }) => (
     </div>
     <div className="flex-[3] bg-doc-slate-50-op50 px-2 py-0.5 min-h-[14px] flex items-center justify-end border-r border-brand-blue-op10 group-hover:bg-brand-blue-op5 transition-colors">
       <span className="text-[7.5px] font-black text-brand-blue uppercase tracking-tighter leading-none italic">
-        {value}
+        {value === undefined || value === null ? '—' : String(value)}
       </span>
     </div>
   </div>

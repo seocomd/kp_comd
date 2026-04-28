@@ -27,9 +27,9 @@ export const Comparison = ({ station1, station2, station3 }: ComparisonProps) =>
   const weightData = [
     { 
       name: 'Вес откр. (кг)', 
-      st1: parseInt(station1.weightOpen), 
-      st2: station2 ? parseInt(station2.weightOpen) : 0,
-      st3: station3 ? parseInt(station3.weightOpen) : 0
+      st1: parseInt(station1.weightOpen) || 0, 
+      st2: station2 ? (parseInt(station2.weightOpen) || 0) : 0,
+      st3: station3 ? (parseInt(station3.weightOpen) || 0) : 0
     },
   ];
 
@@ -124,9 +124,9 @@ export const Comparison = ({ station1, station2, station3 }: ComparisonProps) =>
             <CompRow label="Бак ДЭС" v1={`${station1.fuelTankL} л`} v2={station2 ? `${station2.fuelTankL} л` : null} v3={station3 ? `${station3.fuelTankL} л` : null} />
             <CompRow 
               label="Удельный вес (кг/кВт)" 
-              v1={(parseInt(station1.weightOpen) / station1.nominalPowerKw).toFixed(1)} 
-              v2={station2 ? (parseInt(station2.weightOpen) / station2.nominalPowerKw).toFixed(1) : null}
-              v3={station3 ? (parseInt(station3.weightOpen) / station3.nominalPowerKw).toFixed(1) : null}
+              v1={station1.nominalPowerKw > 0 ? (parseInt(station1.weightOpen || '0') / station1.nominalPowerKw).toFixed(1) : '—'} 
+              v2={station2 && station2.nominalPowerKw > 0 ? (parseInt(station2.weightOpen || '0') / station2.nominalPowerKw).toFixed(1) : (station2 ? '—' : null)}
+              v3={station3 && station3.nominalPowerKw > 0 ? (parseInt(station3.weightOpen || '0') / station3.nominalPowerKw).toFixed(1) : (station3 ? '—' : null)}
             />
           </tbody>
         </table>
