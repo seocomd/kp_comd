@@ -2002,8 +2002,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
             alt={model.name}
             className="w-full h-full object-contain relative z-10"
             referrerPolicy="no-referrer"
-            crossOrigin="anonymous"
-          />
+            />
           <div className="absolute top-4 right-4 bg-brand-blue px-3 py-1 rounded-full">
              <p className="text-[8px] text-white font-black uppercase tracking-widest">{model.nominalPowerKw} кВт</p>
           </div>
