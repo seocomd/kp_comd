@@ -34,7 +34,7 @@ export const Comparison = ({ station1, station2, station3 }: ComparisonProps) =>
   ];
 
   return (
-    <div className="space-y-10 py-10 break-inside-avoid">
+    <div className="space-y-10 py-10 page-break-avoid">
        <div className="relative h-12 w-full mb-6">
         <div className="absolute inset-0 bg-gradient-to-r from-[#00296B] to-[#002F87] rounded-sm z-10">
           <div className="h-full flex items-center px-8 justify-between relative z-20">

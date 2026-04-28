@@ -16,7 +16,7 @@ let cachedSpecs: any[] | null = null;
 function parseSpecsXml() {
   if (cachedSpecs) return cachedSpecs;
   
-  const xmlPath = path.join(process.cwd(), 'public', 'Техпараметры 2026.xml');
+  const xmlPath = path.join(process.cwd(), 'public', 'specs_2026.xml');
   if (!fs.existsSync(xmlPath)) {
     console.log('XML specs file not found at', xmlPath);
     return [];

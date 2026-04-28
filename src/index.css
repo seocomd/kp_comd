@@ -146,3 +146,66 @@
     box-shadow: none !important;
   }
 }
+
+/* Page Break Controls */
+.page-break-avoid {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.page-break-before {
+  break-before: page;
+  page-break-before: always;
+}
+
+.page-break-after {
+  break-after: page;
+  page-break-after: always;
+}
+
+/* PDF Specific Layout Fixes */
+.pdf-mode {
+  width: 1024px !important;
+  min-width: 1024px !important;
+  max-width: 1024px !important;
+  margin: 0 auto !important;
+  background: white !important;
+  padding: 0 !important;
+}
+
+.pdf-mode .flex-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 1.5rem !important;
+}
+
+.pdf-mode .flex-1 {
+  flex: 1 1 0% !important;
+}
+
+.pdf-mode .grid-cols-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.5rem !important;
+}
+
+.pdf-mode .md\:grid-cols-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 1.5rem !important;
+}
+
+.pdf-mode .gap-y-4 {
+  row-gap: 1rem !important;
+}
+
+.pdf-mode .gap-x-12 {
+  column-gap: 1.5rem !important;
+}
+
+.pdf-mode * {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  box-sizing: border-box !important;
+}

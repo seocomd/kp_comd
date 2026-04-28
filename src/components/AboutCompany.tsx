@@ -5,7 +5,7 @@ export const AboutCompany = () => {
   return (
     <div className="space-y-12 pt-12 border-t-2 border-brand-blue-op20">
       {/* Section 1: Leadership */}
-      <div className="space-y-6 break-inside-avoid">
+      <div className="space-y-6 page-break-avoid">
         <h2 className="text-xl font-black text-brand-blue uppercase border-l-4 border-brand-blue pl-4">Лидирующий производитель ДЭС в России</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-doc-slate-50 p-6 rounded border border-doc-slate-100 flex flex-col gap-2">
@@ -24,7 +24,7 @@ export const AboutCompany = () => {
       </div>
 
       {/* Section 2: Stats */}
-      <div className="break-inside-avoid bg-brand-blue text-white p-10 rounded-sm grid grid-cols-3 gap-8 shadow-brand-blue">
+      <div className="page-break-avoid bg-brand-blue text-white p-10 rounded-sm grid grid-cols-3 gap-8 shadow-brand-blue">
         <div className="text-center">
           <p className="text-3xl font-black mb-1">&gt; 20 260</p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-white-op80 leading-tight">Дизельных электростанций произведено и поставлено</p>
@@ -40,8 +40,8 @@ export const AboutCompany = () => {
       </div>
 
       {/* Section 3: Modern Production */}
-      <div className="break-inside-avoid grid grid-cols-2 gap-12 items-center">
-        <div className="space-y-4">
+      <div className="page-break-avoid flex flex-row gap-4 md:gap-12 items-center">
+        <div className="flex-1 space-y-4 min-w-0">
           <h2 className="text-xl font-black text-brand-blue uppercase leading-tight">Российский производитель европейского уровня</h2>
           <p className="text-[12px] text-doc-slate-600 leading-relaxed">
             Завод оборудован ультрасовременным оборудованием: компьютеризированные станки лазерной резки и гибки металла фирмы Warcom (Италия), 
@@ -57,7 +57,7 @@ export const AboutCompany = () => {
             </div>
           </div>
         </div>
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 min-w-0">
           <div className="bg-doc-slate-50 p-8 border-r-4 border-brand-blue text-right">
             <h3 className="text-lg font-black text-brand-blue uppercase mb-2">Завод в Тутаеве</h3>
             <p className="text-[11px] text-doc-slate-600 italic">Площадь 14 000 м², 30 км от Ярославля</p>
@@ -76,7 +76,7 @@ export const AboutCompany = () => {
       </div>
 
       {/* Section 4: Customers & Reach */}
-      <div className="break-inside-avoid space-y-6">
+      <div className="page-break-avoid space-y-6">
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-4">
@@ -106,8 +106,8 @@ export const AboutCompany = () => {
       </div>
 
       {/* Section 5: Advantages */}
-      <div className="break-inside-avoid grid grid-cols-2 gap-8">
-        <div className="space-y-4">
+      <div className="page-break-avoid flex flex-row gap-4 md:gap-8">
+        <div className="flex-1 space-y-4 min-w-0">
           <h3 className="text-sm font-black text-brand-blue uppercase tracking-wider mb-4">Преимущества Компании Дизель</h3>
           <ul className="space-y-2">
             <li className="flex items-start gap-3">
@@ -124,7 +124,7 @@ export const AboutCompany = () => {
             </li>
           </ul>
         </div>
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 min-w-0">
           <h3 className="text-sm font-black text-brand-blue uppercase tracking-wider mb-4">Сервисная поддержка</h3>
           <ul className="space-y-2">
             <li className="flex items-start gap-3">

@@ -266,9 +266,9 @@ const STANDARD_EQUIPMENT = [
 ];
 
 const Header = () => (
-  <div className="relative w-full h-[180px] overflow-hidden mb-8 print:mb-4 group-container">
+  <div className="relative w-full h-[180px] overflow-hidden mb-8 print:mb-4 group-container page-break-avoid">
     <img 
-      src="/public/input_file_2.png" 
+      src="/input_file_2.png" 
       alt="Дизель Компания" 
       className="w-full h-full object-cover"
       referrerPolicy="no-referrer"
@@ -1527,6 +1527,11 @@ const PreviewArea = ({
         letterRendering: true,
         onclone: (clonedDoc: Document) => {
           clonedDoc.body.classList.add('pdf-capture');
+          const clonedElement = clonedDoc.getElementById('proposal-document');
+          if (clonedElement) {
+            clonedElement.classList.add('pdf-mode');
+          }
+          
           // Fix for html2canvas crashing on oklch/oklab colors (Tailwind 4 default)
           const elements = clonedDoc.getElementsByTagName('*');
           for (let i = 0; i < elements.length; i++) {
@@ -1561,7 +1566,7 @@ const PreviewArea = ({
         }
       },
       jsPDF: { unit: 'mm' as const, format: 'a4', orientation: 'portrait' as const },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.page-break-avoid', 'img', 'table', 'tr'] }
     };
     html2pdf().from(element).set(opt).save();
   };
@@ -1617,12 +1622,13 @@ const PreviewArea = ({
           switch (block.type) {
             case 'interactive-container':
               return (
-                <InteractiveContainer 
-                  key={block.id} 
-                  config={block.config}
-                  onUpdateConfig={(config) => updateBlockConfig(block.id, config)}
-                  isAdmin={user?.email === 'seo@comd.ru'}
-                />
+                <div key={block.id} className="page-break-avoid page-break-before">
+                  <InteractiveContainer 
+                    config={block.config}
+                    onUpdateConfig={(config) => updateBlockConfig(block.id, config)}
+                    isAdmin={user?.email === 'seo@comd.ru'}
+                  />
+                </div>
               );
             case 'header':
               return <Header key={block.id} />;
@@ -1630,7 +1636,7 @@ const PreviewArea = ({
               return <div key={block.id} className="px-10 pt-8"><ContactsBar /></div>;
             case 'client-info':
               return (
-                <div key={block.id} className="px-10 pt-2 flex justify-between items-start">
+                <div key={block.id} className="px-10 pt-2 flex justify-between items-start page-break-avoid">
                   <div className="space-y-4 flex-1">
                     <div className="text-[10px] text-doc-slate-500 leading-relaxed text-left px-6 py-4 bg-doc-slate-50 rounded-sm border-l-4 border-brand-blue font-bold italic uppercase max-w-sm">
                       Дизельные электростанции в данном предложении спроектированы для обеспечения максимальной надежности 
@@ -1647,7 +1653,7 @@ const PreviewArea = ({
                return null; // Integrated into client-info for now
             case 'purpose':
               return usePurpose && (
-                <div key={block.id} className="px-10 break-inside-avoid bg-[#f8fafc] border border-doc-slate-100 p-6 rounded-sm text-[10px] text-doc-slate-700 leading-relaxed space-y-3 font-semibold text-justify mx-10">
+                <div key={block.id} className="px-10 page-break-avoid bg-[#f8fafc] border border-doc-slate-100 p-6 rounded-sm text-[10px] text-doc-slate-700 leading-relaxed space-y-3 font-semibold text-justify mx-10">
                   {PURPOSES[purposeType as keyof typeof PURPOSES].text.split('\n\n').map((p, i) => (
                     <p key={i}>{p}</p>
                   ))}
@@ -1655,7 +1661,7 @@ const PreviewArea = ({
               );
             case 'specs':
               return (
-                <div key={block.id} className="px-10 space-y-8">
+                <div key={block.id} className="px-10 space-y-8 page-break-avoid">
                   {/* Tabs for Web View */}
                   {(station2 || station3) && (
                     <div className="no-print mb-8 px-0">
@@ -1781,24 +1787,24 @@ const PreviewArea = ({
               );
             case 'comparison':
               return (station2 || station3) && (
-                <div key={block.id} className="px-10 break-inside-avoid">
+                <div key={block.id} className="px-10 page-break-avoid page-break-before">
                   <Comparison station1={station1} station2={station2} station3={station3} />
                 </div>
               );
             case 'costs':
               return (
-                <div key={block.id} className="px-10">
+                <div key={block.id} className="px-10 page-break-avoid">
                   <div className={cn("grid gap-8", station3 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
-                    <div className="break-inside-avoid">
+                    <div className="page-break-avoid">
                       <OperatingCosts label={station2 ? station1.name : ""} model={station1} fuelPrice={fuelPrice} toRate={toRate} />
                     </div>
                     {station2 && (
-                      <div className="break-inside-avoid">
+                      <div className="page-break-avoid">
                         <OperatingCosts label={station2.name} model={station2} fuelPrice={fuelPrice} toRate={toRate} />
                       </div>
                     )}
                     {station3 && (
-                      <div className="break-inside-avoid">
+                      <div className="page-break-avoid">
                         <OperatingCosts label={station3.name} model={station3} fuelPrice={fuelPrice} toRate={toRate} />
                       </div>
                     )}
@@ -1807,19 +1813,19 @@ const PreviewArea = ({
               );
             case 'control-panel':
               return useControlPanel && (
-                <div key={block.id} className="px-10 break-inside-avoid">
+                <div key={block.id} className="px-10 page-break-avoid page-break-before">
                   <ControlPanelSection />
                 </div>
               );
             case 'about':
               return showCompanyInfo && (
-                <div key={block.id} className="px-10 break-inside-avoid">
+                <div key={block.id} className="px-10 page-break-avoid page-break-before">
                   <AboutCompany />
                 </div>
               );
             case 'footer':
               return (
-                <div key={block.id} className="px-10 mt-8">
+                <div key={block.id} className="px-10 mt-8 page-break-avoid">
                   <div className="text-[9px] text-doc-slate-400 text-justify leading-relaxed border-t border-doc-slate-100 pt-3 italic mb-2 font-bold">
                     <AlertCircle className="w-3 h-3 inline mr-1 -mt-0.5" />
                     Характеристики являются справочными. Окончательные данные фиксируются в договоре.
@@ -1848,11 +1854,11 @@ const PreviewArea = ({
 };
 
 const ContactsBar = () => (
-  <div className="flex justify-between items-center border-b border-doc-slate-100 pb-4 mb-4">
+  <div className="flex justify-between items-center border-b border-doc-slate-100 pb-4 mb-4 page-break-avoid">
     <div className="flex items-center gap-6">
       <div className="w-40 h-10 flex items-center">
         <img 
-          src="/public/input_file_0.png" 
+          src="/input_file_0.png" 
           alt="Дизель Компания" 
           className="w-full h-auto object-contain"
           referrerPolicy="no-referrer"
@@ -1898,7 +1904,7 @@ const ManagerBadge = ({ manager }: { manager: ManagerInfo }) => (
 );
 
 const ControlPanelSection = () => (
-  <div className="space-y-10 py-12 border-t-2 border-brand-blue-op20 flex flex-col break-inside-avoid">
+  <div className="space-y-10 py-12 border-t-2 border-brand-blue-op20 flex flex-col page-break-avoid">
     <div className="flex flex-col md:flex-row gap-8 items-start">
       <div className="flex-1 space-y-4">
         <h3 className="text-xl font-black text-brand-blue uppercase leading-tight border-b-2 border-brand-blue pb-2 flex items-center gap-3">
@@ -1915,7 +1921,7 @@ const ControlPanelSection = () => (
         <div className="absolute inset-0 from-doc-slate-100 to-transparent" />
 <div className="w-full md:w-[350px] bg-white p-2 rounded border border-doc-slate-100 shadow-sm overflow-hidden">
             <img 
-              src="/public/input_file_3.png" 
+              src="/input_file_3.png" 
               alt="Контроллер" 
               className="w-full h-auto object-contain"
               referrerPolicy="no-referrer"
@@ -1955,10 +1961,10 @@ const ControlPanelSection = () => (
 );
 
 const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: string, model: ModelSpec, variant: any, price?: number, hideLabelWeb?: boolean }) => (
-  <div className="space-y-6 break-inside-avoid">
+  <div className="space-y-6 page-break-avoid">
     {/* Section Header - Style from User Snippet */}
     <div className={cn(
-      "flex justify-between items-end border-b-2 border-brand-blue pb-2 mb-4",
+      "flex justify-between items-end border-b-2 border-brand-blue pb-2 mb-4 page-break-avoid",
       hideLabelWeb && "hidden print:flex"
     )}>
       <div className="flex items-center gap-4">
@@ -1996,13 +2002,14 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
             alt={model.name}
             className="w-full h-full object-contain relative z-10"
             referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
           />
           <div className="absolute top-4 right-4 bg-brand-blue px-3 py-1 rounded-full">
              <p className="text-[8px] text-white font-black uppercase tracking-widest">{model.nominalPowerKw} кВт</p>
           </div>
         </div>
         <img 
-          src="/public/input_file_4.png" 
+          src="/input_file_4.png" 
           alt="Technical View" 
           className="w-full h-auto rounded border border-doc-slate-100 shadow-sm" 
           referrerPolicy="no-referrer"
@@ -2010,9 +2017,9 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
       </div>
     )}
 
-    <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+    <div className="grid grid-cols-2 gap-4 gap-y-4">
       {/* Engine Specs */}
-      <div className="space-y-4">
+      <div className="space-y-4 page-break-avoid min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-1.5 h-6 bg-brand-blue rounded-full" />
           <p className="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center gap-1.5">
@@ -2040,7 +2047,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
       </div>
 
       {/* Generator Specs */}
-      <div className="space-y-4">
+      <div className="space-y-4 page-break-avoid min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-1.5 h-6 bg-brand-blue-dark rounded-full" />
           <p className="text-[10px] font-black text-brand-blue-dark uppercase tracking-widest flex items-center gap-1.5">
@@ -2090,10 +2097,10 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
         <div className="w-24 h-16 bg-white rounded border border-brand-blue-op10 overflow-hidden p-1">
            <img 
              src={
-               variant === 'open' ? "/public/ДЭС открытая.png " :
-               variant === 'enclosure' ? "/public/ДЭС в кожухе.png" :
-               variant === 'container' ? "/public/ДЭС в контейнере.png" :
-               variant === 'sever' ? "/public/ДЭС в контейнере Севере-М.png" :
+               variant === 'open' ? "/genset_open.png" :
+               variant === 'enclosure' ? "/genset_canopy.png" :
+               variant === 'container' ? "/genset_container.png" :
+               variant === 'sever' ? "/genset_container_sever_m.png" :
                "https://www.comd.ru/upload/resize_cache/iblock/12a/470_350_1/12acbf4461bb9fd330089ee0e5414746.jpg" // mobile
              }
              className="w-full h-full object-contain"
@@ -2144,7 +2151,7 @@ const OperatingCosts = ({ label, model, fuelPrice, toRate }: any) => (
 );
 
 const FooterMini = () => (
-  <div className="pt-8 border-t border-doc-slate-100 mt-8">
+  <div className="pt-8 border-t border-doc-slate-100 mt-8 page-break-avoid">
     <div className="flex justify-between items-center text-doc-slate-400">
       <div className="flex items-center gap-3">
          <Building2 className="w-5 h-5 text-brand-blue opacity-50" />

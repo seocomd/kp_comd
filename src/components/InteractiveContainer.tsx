@@ -128,11 +128,11 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
   };
 
   return (
-    <div className="flex flex-col items-center py-8 px-10 break-inside-avoid bg-white rounded-3xl border border-brand-blue/10 shadow-sm mb-12 relative group/container">
+    <div className="flex flex-col items-center py-8 px-10 page-break-avoid bg-white rounded-3xl border border-brand-blue/10 shadow-sm mb-12 relative group/container">
        {/* PDF / Print version (Static Image) */}
        <div className="hidden print:block w-full">
          <h3 className="text-[12px] font-black text-brand-blue uppercase mb-6 tracking-widest text-center italic">Устройство блок-контейнера «Север»</h3>
-         <img src="/public/Контейнер_Подписи.png" className="w-[180mm] mx-auto h-auto rounded-xl" alt="Контейнер в разрезе (схема)" />
+         <img src="/container_labels.png" className="w-[180mm] mx-auto h-auto rounded-xl" alt="Контейнер в разрезе (схема)" />
        </div>
 
        {/* Web / Interactive version */}
@@ -174,7 +174,7 @@ export const InteractiveContainer: React.FC<InteractiveContainerProps> = ({ conf
              isEditing && "cursor-crosshair ring-2 ring-brand-blue/20"
            )}
          >
-            <img src="/public/Контейнер.png" className="w-full h-full object-contain pointer-events-none" alt="Схема" />
+            <img src="/container.png" className="w-full h-full object-contain pointer-events-none" alt="Схема" />
             
             <div className="absolute inset-0 pointer-events-none">
               {points.map((p) => (
