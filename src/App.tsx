@@ -659,6 +659,9 @@ export default function App() {
               p1={station1.price || 0}
               p2={station2.price || 0}
               p3={station3.price || 0}
+              rec1={station1.recommended}
+              rec2={station2.recommended}
+              rec3={station3.recommended}
               manager={manager}
               fuelPrice={fuelPrice}
               toRate={toRate}
@@ -686,6 +689,9 @@ export default function App() {
             p1={station1.price || 0}
             p2={station2.price || 0}
             p3={station3.price || 0}
+            rec1={station1.recommended}
+            rec2={station2.recommended}
+            rec3={station3.recommended}
             manager={manager}
             fuelPrice={fuelPrice}
             toRate={toRate}
@@ -1213,7 +1219,21 @@ const AdminSidebar = ({
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] font-black text-doc-slate-800 uppercase tracking-tight leading-none mb-1">
-                        {block.type === 'interactive-container' ? 'Интерактивная схема' : block.type.replace('-', ' ')}
+                        {
+                          block.type === 'interactive-container' ? 'Интерактивная схема' : 
+                          block.type === 'header' ? 'Шапка КП (Лого)' :
+                          block.type === 'contacts' ? 'Контакты' :
+                          block.type === 'client-info' ? 'Клиент и менеджер' :
+                          block.type === 'message' ? 'Сопроводительное письмо' :
+                          block.type === 'purpose' ? 'Назначение ДЭС' :
+                          block.type === 'specs' ? 'Технические параметры' :
+                          block.type === 'comparison' ? 'Таблица сравнения' :
+                          block.type === 'costs' ? 'Эксплуатационные расходы' :
+                          block.type === 'control-panel' ? 'Панель управления' :
+                          block.type === 'about' ? 'О компании' :
+                          block.type === 'footer' ? 'Подвал КП' :
+                          block.type.replace('-', ' ')
+                        }
                       </p>
                       <p className="text-[8px] text-doc-slate-400 font-bold uppercase tracking-widest">Блок #{index + 1}</p>
                     </div>
@@ -1299,9 +1319,38 @@ const AdminSidebar = ({
         {currentProposalId && (
           <button 
             onClick={() => {
-              const url = `${window.location.origin}${window.location.pathname}?id=${currentProposalId}`;
-              navigator.clipboard.writeText(url);
-              alert('Ссылка скопирована в буфер обмена!');
+              const url = `${window.location.origin}/?id=${currentProposalId}`;
+              
+              // More robust copy method
+              const copyToClipboard = (text: string) => {
+                if (navigator.clipboard && window.isSecureContext) {
+                  return navigator.clipboard.writeText(text);
+                } else {
+                  // Fallback for non-secure contexts or older browsers
+                  const textArea = document.createElement("textarea");
+                  textArea.value = text;
+                  textArea.style.position = "fixed";
+                  textArea.style.left = "-9999px";
+                  textArea.style.top = "0";
+                  document.body.appendChild(textArea);
+                  textArea.focus();
+                  textArea.select();
+                  try {
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return Promise.resolve();
+                  } catch (err) {
+                    document.body.removeChild(textArea);
+                    return Promise.reject(err);
+                  }
+                }
+              };
+
+              copyToClipboard(url).then(() => {
+                alert('Ссылка успешно скопирована!');
+              }).catch(() => {
+                alert('Не удалось скопировать автоматически. Ссылка: ' + url);
+              });
             }}
             className="w-full bg-brand-blue/10 text-brand-blue font-black py-4 rounded-2xl shadow-sm hover:bg-brand-blue hover:text-white transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3"
           >
@@ -1500,19 +1549,20 @@ const StationFields = ({ config, setConfig, specs }: any) => (
 
 const PreviewArea = ({ 
   blocks, station1, station2, station3, p1, p2, p3, manager, fuelPrice, toRate, 
-  showCompanyInfo, usePurpose, useControlPanel, purposeType, v1, v2, v3, onBack, isClientView,
+  showCompanyInfo, usePurpose, useControlPanel, purposeType, v1, v2, v3, 
+  rec1, rec2, rec3, onBack, isClientView,
   user, onUpdateBlocks
 }: any) => {
-  const [zoom, setZoom] = useState(0.85);
+  const [zoom, setZoom] = useState(1.25); 
   const [activeStationTab, setActiveStationTab] = useState(1);
 
   const updateBlockConfig = (blockId: string, config: any) => {
     onUpdateBlocks((prev: any) => prev.map((b: any) => b.id === blockId ? { ...b, config } : b));
   };
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.4));
-  const handleZoomReset = () => setZoom(0.85);
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+  const handleZoomReset = () => setZoom(1.25);
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('proposal-document');
@@ -1592,7 +1642,7 @@ const PreviewArea = ({
            </button>
            <div className="h-6 w-[1px] bg-doc-slate-200 mx-2" />
            <button onClick={handleZoomReset} className="px-3 hover:bg-doc-slate-100 rounded-lg transition-colors text-xs font-black text-brand-blue uppercase">
-             {Math.round(zoom * 100)}%
+             {Math.round(zoom * 100 / 1.25)}%
            </button>
            <div className="h-6 w-[1px] bg-doc-slate-200 mx-2" />
            <button onClick={handleZoomIn} className="p-2 hover:bg-doc-slate-100 rounded-full transition-colors text-doc-slate-600">
@@ -1638,7 +1688,7 @@ const PreviewArea = ({
               return (
                 <div key={block.id} className="px-10 pt-2 flex justify-between items-start page-break-avoid">
                   <div className="space-y-4 flex-1">
-                    <div className="text-[10px] text-doc-slate-500 leading-relaxed text-left px-6 py-4 bg-doc-slate-50 rounded-sm border-l-4 border-brand-blue font-bold italic uppercase max-w-sm">
+                    <div className="text-[10px] text-doc-slate-500 leading-relaxed text-left px-6 py-4 bg-doc-slate-50 rounded-sm border-l-4 border-brand-blue font-medium italic uppercase max-w-sm">
                       Дизельные электростанции в данном предложении спроектированы для обеспечения максимальной надежности 
                       в самых суровых российских условиях. {station2 ? 'Сравнение представленных моделей позволит выбрать оптимальное решение.' : ''}
                     </div>
@@ -1674,19 +1724,19 @@ const PreviewArea = ({
                         <button 
                           onClick={() => setActiveStationTab(1)}
                           className={cn(
-                            "flex-1 px-4 py-3.5 text-[10px] font-black uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
+                            "flex-1 px-4 py-3.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
                             activeStationTab === 1 
                               ? "bg-brand-blue text-white shadow-[0_8px_20px_rgba(0,41,107,0.25)] ring-1 ring-brand-blue/20" 
                               : "text-doc-slate-500 hover:bg-white/50 hover:text-doc-slate-700"
                           )}
                         >
                           <span className={cn(
-                            "text-[8px] tracking-widest font-black uppercase",
+                            "text-[8px] tracking-widest font-bold uppercase",
                             activeStationTab === 1 ? "text-white/60" : "text-doc-slate-400"
                           )}>Вариант 01</span>
-                          <span className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1.5 font-bold">
                             {station1.name} 
-                            {station1.recommended && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
+                            {rec1 && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
                           </span>
                         </button>
                         
@@ -1694,19 +1744,19 @@ const PreviewArea = ({
                           <button 
                             onClick={() => setActiveStationTab(2)}
                             className={cn(
-                              "flex-1 px-4 py-3.5 text-[10px] font-black uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
+                              "flex-1 px-4 py-3.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
                               activeStationTab === 2 
                                 ? "bg-brand-blue text-white shadow-[0_8px_20px_rgba(0,41,107,0.25)] ring-1 ring-brand-blue/20" 
                                 : "text-doc-slate-500 hover:bg-white/50 hover:text-doc-slate-700"
                             )}
                           >
                             <span className={cn(
-                              "text-[8px] tracking-widest font-black uppercase",
+                              "text-[8px] tracking-widest font-bold uppercase",
                               activeStationTab === 2 ? "text-white/60" : "text-doc-slate-400"
                             )}>Вариант 02</span>
-                            <span className="flex items-center gap-1.5">
+                            <span className="flex items-center gap-1.5 font-bold">
                               {station2.name} 
-                              {station2.recommended && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
+                              {rec2 && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
                             </span>
                           </button>
                         )}
@@ -1715,19 +1765,19 @@ const PreviewArea = ({
                           <button 
                             onClick={() => setActiveStationTab(3)}
                             className={cn(
-                              "flex-1 px-4 py-3.5 text-[10px] font-black uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
+                              "flex-1 px-4 py-3.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded-xl flex flex-col items-center gap-1.5",
                               activeStationTab === 3 
                                 ? "bg-brand-blue text-white shadow-[0_8px_20px_rgba(0,41,107,0.25)] ring-1 ring-brand-blue/20" 
                                 : "text-doc-slate-500 hover:bg-white/50 hover:text-doc-slate-700"
                             )}
                           >
                             <span className={cn(
-                              "text-[8px] tracking-widest font-black uppercase",
+                              "text-[8px] tracking-widest font-bold uppercase",
                               activeStationTab === 3 ? "text-white/60" : "text-doc-slate-400"
                             )}>Вариант 03</span>
-                            <span className="flex items-center gap-1.5">
+                            <span className="flex items-center gap-1.5 font-bold">
                               {station3.name} 
-                              {station3.recommended && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
+                              {rec3 && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 drop-shadow-sm" />}
                             </span>
                           </button>
                         )}
@@ -1741,7 +1791,7 @@ const PreviewArea = ({
                     (station2 || station3) ? (activeStationTab === 1 ? "block" : "hidden print:block") : "block"
                   )}>
                     <div className="relative">
-                       {station1.recommended && (
+                       {rec1 && (
                           <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
                             Рекомендуем ⭐
                           </div>
@@ -1757,7 +1807,7 @@ const PreviewArea = ({
                       activeStationTab === 2 ? "block" : "hidden print:block"
                     )}>
                       <div className="relative">
-                        {station2.recommended && (
+                        {rec2 && (
                             <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
                               Рекомендуем ⭐
                             </div>
@@ -1774,7 +1824,7 @@ const PreviewArea = ({
                       activeStationTab === 3 ? "block" : "hidden print:block"
                     )}>
                       <div className="relative">
-                        {station3.recommended && (
+                        {rec3 && (
                             <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
                               Рекомендуем ⭐
                             </div>
@@ -1979,14 +2029,13 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
           </div>
         )}
       </div>
-      
       {price && price > 0 && (
         <div className="text-right flex flex-col items-end">
           <div className="flex items-center gap-1.5 mb-1">
              <div className="w-1.5 h-1.5 rounded-full bg-brand-blue" />
-             <p className="text-[7px] font-black uppercase text-doc-slate-500 tracking-wider">Итого с НДС 20%</p>
+             <p className="text-[7px] font-bold uppercase text-doc-slate-500 tracking-wider">Итого с НДС 20%</p>
           </div>
-          <p className="text-2xl font-black text-brand-blue tracking-tighter leading-none italic">
+          <p className="text-2xl font-bold text-brand-blue tracking-tighter leading-none italic">
             {price.toLocaleString('ru-RU')} ₽
           </p>
         </div>
@@ -2002,7 +2051,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
             alt={model.name}
             className="w-full h-full object-contain relative z-10"
             referrerPolicy="no-referrer"
-            />
+                      />
           <div className="absolute top-4 right-4 bg-brand-blue px-3 py-1 rounded-full">
              <p className="text-[8px] text-white font-black uppercase tracking-widest">{model.nominalPowerKw} кВт</p>
           </div>
@@ -2010,7 +2059,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
         <img 
           src="/input_file_4.png" 
           alt="Technical View" 
-          className="w-full h-auto rounded border border-doc-slate-100 shadow-sm" 
+          className="w-[50%] mx-auto h-auto rounded border border-doc-slate-100 shadow-sm" 
           referrerPolicy="no-referrer"
         />
       </div>
@@ -2021,7 +2070,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
       <div className="space-y-4 page-break-avoid min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-1.5 h-6 bg-brand-blue rounded-full" />
-          <p className="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center gap-1.5">
+          <p className="text-[10px] font-bold text-brand-blue uppercase tracking-widest flex items-center gap-1.5">
             <Zap className="w-3 h-3" /> Двигатель (ДВС)
           </p>
         </div>
@@ -2049,7 +2098,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
       <div className="space-y-4 page-break-avoid min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-1.5 h-6 bg-brand-blue-dark rounded-full" />
-          <p className="text-[10px] font-black text-brand-blue-dark uppercase tracking-widest flex items-center gap-1.5">
+          <p className="text-[10px] font-bold text-brand-blue-dark uppercase tracking-widest flex items-center gap-1.5">
             <Activity className="w-3 h-3" /> Генератор
           </p>
         </div>
@@ -2071,7 +2120,7 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: st
         
         <div className="flex items-center gap-2 mb-2 mt-6">
           <div className="w-1.5 h-6 bg-doc-slate-300 rounded-full" />
-          <p className="text-[10px] font-black text-doc-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+          <p className="text-[10px] font-bold text-doc-slate-600 uppercase tracking-widest flex items-center gap-1.5">
             <Maximize className="w-3 h-3" /> ДЭС и Габариты
           </p>
         </div>
@@ -2169,7 +2218,7 @@ const SpecRow = ({ label, value }: { label: string, value: any }) => (
       </span>
     </div>
     <div className="flex-[3] bg-doc-slate-50-op50 px-2 py-0.5 min-h-[14px] flex items-center justify-end border-r border-brand-blue-op10 group-hover:bg-brand-blue-op5 transition-colors">
-      <span className="text-[7.5px] font-black text-brand-blue uppercase tracking-tighter leading-none italic">
+      <span className="text-[7.5px] font-bold text-brand-blue uppercase tracking-tighter leading-none italic">
         {value === undefined || value === null ? '—' : String(value)}
       </span>
     </div>

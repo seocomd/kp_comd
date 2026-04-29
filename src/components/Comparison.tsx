@@ -110,13 +110,13 @@ export const Comparison = ({ station1, station2, station3 }: ComparisonProps) =>
         <table className="w-full text-[10px] border-collapse">
           <thead>
             <tr className="bg-doc-slate-50 border-b-2 border-brand-blue">
-              <th className="p-4 text-left text-doc-slate-400 font-black uppercase tracking-widest text-[8px]">Техническая спецификация</th>
-              <th className="p-4 text-center bg-brand-blue/5 text-brand-blue font-black uppercase text-[9px] tracking-wider italic">{station1.name}</th>
-              {station2 && <th className="p-4 text-center bg-brand-blue/10 text-brand-blue-dark font-black uppercase text-[9px] tracking-wider italic">{station2.name}</th>}
-              {station3 && <th className="p-4 text-center bg-brand-blue/15 text-brand-blue font-black uppercase text-[9px] tracking-wider italic">{station3.name}</th>}
+              <th className="p-4 text-left text-doc-slate-400 font-bold uppercase tracking-widest text-[8px]">Техническая спецификация</th>
+              <th className="p-4 text-center bg-brand-blue/5 text-brand-blue font-bold uppercase text-[9px] tracking-wider italic">{station1.name}</th>
+              {station2 && <th className="p-4 text-center bg-brand-blue/10 text-brand-blue-dark font-bold uppercase text-[9px] tracking-wider italic">{station2.name}</th>}
+              {station3 && <th className="p-4 text-center bg-brand-blue/15 text-brand-blue font-bold uppercase text-[9px] tracking-wider italic">{station3.name}</th>}
             </tr>
           </thead>
-          <tbody className="font-bold text-doc-slate-700">
+          <tbody className="font-semibold text-doc-slate-700">
             <CompRow label="Марка двигателя" v1={station1.engineModel} v2={station2?.engineModel} v3={station3?.engineModel} />
             <CompRow label="Марка генератора" v1={station1.generatorModel} v2={station2?.generatorModel} v3={station3?.generatorModel} />
             <CompRow label="Расход при 75%" v1={`${station1.fuelCons75} л/ч`} v2={station2 ? `${station2.fuelCons75} л/ч` : null} v3={station3 ? `${station3.fuelCons75} л/ч` : null} />
@@ -137,9 +137,9 @@ export const Comparison = ({ station1, station2, station3 }: ComparisonProps) =>
 
 const CompRow = ({ label, v1, v2, v3 }: { label: string, v1: any, v2?: any, v3?: any }) => (
   <tr className="border-b border-doc-slate-100 hover:bg-doc-blue-50 transition-colors group">
-    <td className="p-3.5 text-doc-slate-400 uppercase font-black text-[8px] tracking-wider group-hover:text-brand-blue">{label}</td>
-    <td className="p-3.5 text-center border-l border-doc-slate-100 font-black text-brand-blue">{v1}</td>
-    {v2 !== undefined && <td className="p-3.5 text-center border-l border-doc-slate-100 font-black text-brand-blue-dark">{v2 || '—'}</td>}
-    {v3 !== undefined && <td className="p-3.5 text-center border-l border-doc-slate-100 font-black text-blue-600">{v3 || '—'}</td>}
+    <td className="p-3.5 text-doc-slate-400 uppercase font-bold text-[8px] tracking-wider group-hover:text-brand-blue">{label}</td>
+    <td className="p-3.5 text-center border-l border-doc-slate-100 font-bold text-brand-blue">{v1}</td>
+    {v2 !== undefined && <td className="p-3.5 text-center border-l border-doc-slate-100 font-bold text-brand-blue-dark">{v2 || '—'}</td>}
+    {v3 !== undefined && <td className="p-3.5 text-center border-l border-doc-slate-100 font-bold text-blue-600">{v3 || '—'}</td>}
   </tr>
 );

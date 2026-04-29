@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  diesel-kp-app:
+    build: .
+    container_name: diesel-kp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./database.sqlite:/app/database.sqlite
+    restart: unless-stopped
