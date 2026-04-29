@@ -1790,14 +1790,7 @@ const PreviewArea = ({
                     "space-y-8",
                     (station2 || station3) ? (activeStationTab === 1 ? "block" : "hidden print:block") : "block"
                   )}>
-                    <div className="relative">
-                       {rec1 && (
-                          <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
-                            Рекомендуем ⭐
-                          </div>
-                       )}
-                       <SpecSection label={station1.name} model={station1} variant={v1} price={p1} hideLabelWeb={!!(station2 || station3)} />
-                    </div>
+                     <SpecSection label={station1.name} model={station1} variant={v1} price={p1} hideLabelWeb={!!(station2 || station3)} recommended={rec1} />
                   </div>
 
                   {/* Station 2 */}
@@ -1806,14 +1799,7 @@ const PreviewArea = ({
                       "space-y-8",
                       activeStationTab === 2 ? "block" : "hidden print:block"
                     )}>
-                      <div className="relative">
-                        {rec2 && (
-                            <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
-                              Рекомендуем ⭐
-                            </div>
-                        )}
-                        <SpecSection label={station2.name} model={station2} variant={v2} price={p2} hideLabelWeb={true} />
-                      </div>
+                      <SpecSection label={station2.name} model={station2} variant={v2} price={p2} hideLabelWeb={true} recommended={rec2} />
                     </div>
                   )}
 
@@ -1823,14 +1809,7 @@ const PreviewArea = ({
                       "space-y-8",
                       activeStationTab === 3 ? "block" : "hidden print:block"
                     )}>
-                      <div className="relative">
-                        {rec3 && (
-                            <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
-                              Рекомендуем ⭐
-                            </div>
-                        )}
-                        <SpecSection label={station3.name} model={station3} variant={v3} price={p3} hideLabelWeb={true} />
-                      </div>
+                      <SpecSection label={station3.name} model={station3} variant={v3} price={p3} hideLabelWeb={true} recommended={rec3} />
                     </div>
                   )}
                 </div>
@@ -2010,14 +1989,16 @@ const ControlPanelSection = () => (
   </div>
 );
 
-const SpecSection = ({ label, model, variant, price, hideLabelWeb }: { label: string, model: ModelSpec, variant: any, price?: number, hideLabelWeb?: boolean }) => (
-  <div className="space-y-6 page-break-avoid">
+const SpecSection = ({ label, model, variant, price, hideLabelWeb, recommended }: { label: string, model: ModelSpec, variant: any, price?: number, hideLabelWeb?: boolean, recommended?: boolean }) => (
+  <div className="space-y-6 page-break-avoid relative">
+    {recommended && (
+      <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-20">
+        Рекомендуем ⭐
+      </div>
+    )}
     {/* Section Header - Style from User Snippet */}
-    <div className={cn(
-      "flex justify-between items-end border-b-2 border-brand-blue pb-2 mb-4 page-break-avoid",
-      hideLabelWeb && "hidden print:flex"
-    )}>
-      <div className="flex items-center gap-4">
+    <div className="flex justify-between items-end border-b-2 border-brand-blue pb-2 mb-4 page-break-avoid">
+      <div className={cn("flex items-center gap-4", hideLabelWeb && "hidden print:flex")}>
         <div className="px-6 py-2 bg-gradient-to-r from-[#00296B] to-[#002F87] rounded-sm shadow-sm relative overflow-hidden">
           <span className="text-[10px] font-black text-white uppercase tracking-[0.4em] relative z-10">{label}</span>
           <div className="absolute inset-0 bg-white/5 skew-x-12 translate-x-12" />

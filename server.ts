@@ -9,7 +9,8 @@ import { XMLParser } from 'fast-xml-parser';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database('database.sqlite');
+const dbPath = process.env.DATABASE_URL || 'database.sqlite';
+const db = new Database(dbPath);
 
 let cachedSpecs: any[] | null = null;
 
