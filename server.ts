@@ -161,6 +161,7 @@ async function bootstrap() {
 
   CREATE TABLE IF NOT EXISTS proposals (
     id TEXT PRIMARY KEY,
+    slug TEXT UNIQUE, -- New slugs for better links
     clientName TEXT,
     managerId TEXT,
     items TEXT, -- JSON array of specs items
@@ -199,6 +200,12 @@ async function bootstrap() {
   const proposalsInfo = db.prepare("PRAGMA table_info(proposals)").all() as any[];
   if (!proposalsInfo.some(col => col.name === 'blocks')) {
     db.prepare("ALTER TABLE proposals ADD COLUMN blocks TEXT").run();
+  }
+
+  // Migrations: Add slug to proposals if not exists
+  if (!proposalsInfo.some(col => col.name === 'slug')) {
+    db.prepare("ALTER TABLE proposals ADD COLUMN slug TEXT").run();
+    db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_proposals_slug ON proposals(slug)").run();
   }
 
 // Bootstrap admin if not exists
@@ -309,8 +316,9 @@ app.get('/api/proposals', (req, res) => {
   })));
 });
 
-app.get('/api/proposals/:id', (req, res) => {
-  const proposal = db.prepare('SELECT * FROM proposals WHERE id = ?').get(req.params.id) as any;
+app.get('/api/proposals/:idOrSlug', (req, res) => {
+  const { idOrSlug } = req.params;
+  const proposal = db.prepare('SELECT * FROM proposals WHERE id = ? OR slug = ?').get(idOrSlug, idOrSlug) as any;
   if (proposal) {
     res.json({
       ...proposal,
@@ -328,29 +336,36 @@ app.get('/api/proposals/:id', (req, res) => {
 app.post('/api/proposals', (req, res) => {
   const id = Math.random().toString(36).substring(2, 11);
   const data = req.body;
-  db.prepare(`
-    INSERT INTO proposals (
-      id, clientName, managerId, items, blocks, fuelPrice, toRate, 
-      showCompanyInfo, usePurpose, useControlPanel, purposeType, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    id, data.clientName, data.managerId, JSON.stringify(data.items || []), JSON.stringify(data.blocks || []), 
-    data.fuelPrice, data.toRate,
-    data.showCompanyInfo ? 1 : 0, data.usePurpose ? 1 : 0, data.useControlPanel ? 1 : 0, data.purposeType,
-    new Date().toISOString()
-  );
-  res.json({ id });
+  const slug = data.slug || id;
+
+  try {
+    db.prepare(`
+      INSERT INTO proposals (
+        id, slug, clientName, managerId, items, blocks, fuelPrice, toRate, 
+        showCompanyInfo, usePurpose, useControlPanel, purposeType, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, slug, data.clientName, data.managerId, JSON.stringify(data.items || []), JSON.stringify(data.blocks || []), 
+      data.fuelPrice, data.toRate,
+      data.showCompanyInfo ? 1 : 0, data.usePurpose ? 1 : 0, data.useControlPanel ? 1 : 0, data.purposeType,
+      new Date().toISOString()
+    );
+    res.json({ id, slug });
+  } catch (e: any) {
+    // If slug is taken, fallback to ID or append something
+    res.status(400).json({ error: 'Slug related error: ' + e.message });
+  }
 });
 
 app.put('/api/proposals/:id', (req, res) => {
   const data = req.body;
   db.prepare(`
     UPDATE proposals SET 
-      clientName = ?, items = ?, blocks = ?, fuelPrice = ?, toRate = ?, 
+      clientName = ?, slug = ?, items = ?, blocks = ?, fuelPrice = ?, toRate = ?, 
       showCompanyInfo = ?, usePurpose = ?, useControlPanel = ?, purposeType = ?
     WHERE id = ?
   `).run(
-    data.clientName, JSON.stringify(data.items || []), JSON.stringify(data.blocks || []), 
+    data.clientName, data.slug, JSON.stringify(data.items || []), JSON.stringify(data.blocks || []), 
     data.fuelPrice, data.toRate,
     data.showCompanyInfo ? 1 : 0, data.usePurpose ? 1 : 0, data.useControlPanel ? 1 : 0, data.purposeType,
     req.params.id
@@ -363,15 +378,15 @@ app.delete('/api/proposals/:id', (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/proposals/:id/view', (req, res) => {
+app.post('/api/proposals/:idOrSlug/view', (req, res) => {
   const now = new Date().toISOString();
   db.prepare(`
     UPDATE proposals SET 
       viewCount = viewCount + 1,
       lastViewedAt = ?,
       firstViewedAt = COALESCE(firstViewedAt, ?)
-    WHERE id = ?
-  `).run(now, now, req.params.id);
+    WHERE id = ? OR slug = ?
+  `).run(now, now, req.params.idOrSlug, req.params.idOrSlug);
   res.json({ success: true });
 });
 

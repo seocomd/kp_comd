@@ -61,6 +61,17 @@ import { Comparison } from './components/Comparison';
 import { InteractiveContainer } from './components/InteractiveContainer';
 
 // --- Types ---
+const translit = (text: string) => {
+  const map: any = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+    ' ': '-', '_': '-', '.': '-', ',': '-'
+  };
+  return text.toLowerCase().split('').map(char => map[char] || char).join('').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+};
+
 interface Block {
   id: string;
   type: 'header' | 'client-info' | 'manager' | 'message' | 'specs' | 'comparison' | 'costs' | 'control-panel' | 'about' | 'purpose' | 'contacts' | 'footer' | 'interactive-container';
@@ -101,6 +112,7 @@ interface ProposalItem {
 
 interface ProposalData {
   id?: string;
+  slug?: string;
   clientName: string;
   managerId: string;
   items: ProposalItem[];
@@ -282,6 +294,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<'dashboard' | 'editor' | 'proposal'>('dashboard');
   const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
+  const [currentProposalSlug, setCurrentProposalSlug] = useState<string | null>(null);
   const [proposals, setProposals] = useState<ProposalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadedSpecs, setLoadedSpecs] = useState<Manufacturer[]>(specsData);
@@ -466,7 +479,8 @@ export default function App() {
             { id: 'b11', type: 'footer', isVisible: true },
           ]);
         }
-        setCurrentProposalId(id);
+        setCurrentProposalId(data.id);
+        setCurrentProposalSlug(data.slug || null);
         setView(targetView);
 
         // Fetch manager profile
@@ -496,8 +510,13 @@ export default function App() {
     if (isTwoStations || isThreeStations) items.push(station2);
     if (isThreeStations) items.push(station3);
 
+    const dateStr = new Date().toISOString().split('T')[0];
+    const companySlug = translit(clientName);
+    const slug = `${dateStr}-${companySlug}`;
+
     const data = {
       clientName,
+      slug,
       managerId: user.id,
       items,
       blocks,
@@ -516,6 +535,7 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
+        setCurrentProposalSlug(slug);
         alert('КП успешно обновлено!');
       } else {
         const resp = await fetch('/api/proposals', {
@@ -525,6 +545,7 @@ export default function App() {
         });
         const result = await resp.json();
         setCurrentProposalId(result.id);
+        setCurrentProposalSlug(result.slug);
         alert('КП успешно сохранено!');
       }
       loadProposals(user.id, user.role);
@@ -647,6 +668,7 @@ export default function App() {
               onSave={handleSaveProposal}
               onBack={() => setView('dashboard')}
               currentProposalId={currentProposalId}
+              currentProposalSlug={currentProposalSlug}
               blocks={blocks}
               setBlocks={setBlocks}
               loadedSpecs={loadedSpecs}
@@ -995,7 +1017,7 @@ const AdminSidebar = ({
   station1, setStation1, station2, setStation2, station3, setStation3,
   fuelPrice, setFuelPrice, toRate, setToRate, 
   usePurpose, setUsePurpose, purposeType, setPurposeType,
-  manager, setManager, onSave, onBack, currentProposalId,
+  manager, setManager, onSave, onBack, currentProposalId, currentProposalSlug,
   blocks, setBlocks,
   loadedSpecs
 }: any) => {
@@ -1319,7 +1341,7 @@ const AdminSidebar = ({
         {currentProposalId && (
           <button 
             onClick={() => {
-              const url = `${window.location.origin}/?id=${currentProposalId}`;
+              const url = `${window.location.origin}/?id=${currentProposalSlug || currentProposalId}`;
               
               // More robust copy method
               const copyToClipboard = (text: string) => {
@@ -1621,15 +1643,19 @@ const PreviewArea = ({
     html2pdf().from(element).set(opt).save();
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <main className={cn(
-      "bg-[#ccd5de] p-10 overflow-y-auto no-scrollbar print:p-0 print:bg-white relative",
+      "bg-[#ccd5de] p-10 overflow-y-auto no-scrollbar print:p-0 print:bg-white relative print:overflow-visible print:h-auto",
       isClientView ? "w-full" : "flex-1"
     )}>
-      {isClientView && (
+      {isClientView && !user && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 no-print pointer-events-none z-50">
-          <div className="bg-white px-6 py-2 rounded-full text-xs font-black text-brand-blue shadow-lg pointer-events-auto border border-white">
-            ПУБЛИЧНЫЙ ПРОСМОТР
+          <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full text-[10px] font-black text-white/50 uppercase tracking-widest shadow-sm pointer-events-auto border border-white/5 italic">
+            Режим просмотра КП
           </div>
         </div>
       )}
@@ -1651,7 +1677,7 @@ const PreviewArea = ({
         </div>
       )}
 
-      {onBack && (
+      {(onBack && (!isClientView || user)) && (
           <button 
             onClick={onBack}
             className="fixed top-6 right-24 md:right-32 p-4 bg-white text-doc-slate-600 rounded-full shadow-lg no-print transition-all z-50 flex items-center gap-2 group"
@@ -1872,8 +1898,16 @@ const PreviewArea = ({
       
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 no-print z-50">
          <button 
+          onClick={handlePrint}
+          className="w-14 h-14 bg-white text-brand-blue border border-brand-blue/20 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
+          title="Печать"
+         >
+           <Printer className="w-6 h-6" />
+         </button>
+         <button 
           onClick={handleDownloadPdf}
           className="w-14 h-14 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
+          title="Скачать PDF"
          >
            <Download className="w-6 h-6" />
          </button>

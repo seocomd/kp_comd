@@ -119,31 +119,42 @@
 }
 
 @media print {
-  body {
-    background: white !important;
+  @page {
+    size: A4;
+    margin: 0;
   }
-  .no-print {
-    display: none !important;
+  
+  html, body {
+    width: 210mm;
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
   }
-  .print-only {
-    display: none !important;
+
+  body * {
+    visibility: hidden;
   }
-  @media print {
-    .print-only {
-      display: block !important;
-    }
+
+  #proposal-document, #proposal-document * {
+    visibility: visible;
   }
-  .pdf-capture .print-only {
-    display: block !important;
-  }
-  .pdf-capture .no-print {
-    display: none !important;
-  }
+
   #proposal-document {
-    width: 100% !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    transform: none !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }
 
