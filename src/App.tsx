@@ -74,7 +74,7 @@ const translit = (text: string) => {
 
 interface Block {
   id: string;
-  type: 'header' | 'client-info' | 'manager' | 'message' | 'specs' | 'comparison' | 'costs' | 'control-panel' | 'about' | 'purpose' | 'contacts' | 'footer' | 'interactive-container';
+  type: 'header' | 'client-info' | 'manager' | 'message' | 'specs' | 'comparison' | 'costs' | 'control-panel' | 'about' | 'purpose' | 'contacts' | 'footer' | 'interactive-container' | 'reserve-input';
   isVisible: boolean;
   config?: any;
 }
@@ -110,10 +110,36 @@ interface ProposalItem {
   recommended?: boolean;
 }
 
+interface AdditionalOption {
+  id: string;
+  name: string;
+  price: number;
+  isIncluded: boolean;
+}
+
+interface DeliveryInfo {
+  address: string;
+  price: number;
+  isIncluded: boolean;
+}
+
+interface CommissioningInfo {
+  location: string;
+  price: number;
+  isIncluded: boolean;
+}
+
 interface ProposalData {
   id?: string;
   slug?: string;
-  clientName: string;
+  clientName: string; // This is the Company/Client field
+  clientPersonName?: string; // New: Client's direct name
+  validUntil?: string; // New: Validity date
+  coverLetter?: string; // New: Cover letter text
+  additionalOptions?: AdditionalOption[];
+  deliveryInfo?: DeliveryInfo;
+  commissioningInfo?: CommissioningInfo;
+  reserveInputType?: 'no_avr' | 'avr_1' | 'avr_2' | 'avr_3' | 'manual' | 'automatic';
   managerId: string;
   items: ProposalItem[];
   blocks: Block[]; // New block-based structure
@@ -277,6 +303,83 @@ const STANDARD_EQUIPMENT = [
   'Полный комплект документации'
 ];
 
+const RESERVE_INPUT_TEXT = {
+  no_avr: {
+    title: 'Без АВР',
+    description: 'Система ручного управления ДЭС. Запуск и переключение нагрузки осуществляется оператором вручную.',
+    features: [
+      'Максимальная простота',
+      'Минимальная стоимость',
+      'Высокая надежность',
+      'Требуется постоянный персонал'
+    ],
+    icon: <Settings className="w-8 h-8" />,
+    image: '/avr.png'
+  },
+  avr_1: {
+    title: 'АВР 1 степени',
+    description: 'Автоматический запуск ДЭС при исчезновении напряжения в основной сети без автоматического переключения нагрузки.',
+    features: [
+      'Автоматический прогрев ДВС',
+      'Контроль параметров сети',
+      'Готовность к приему нагрузки',
+      'Защита двигателя и генератора'
+    ],
+    icon: <Zap className="w-8 h-8" />,
+    image: '/avr.png'
+  },
+  avr_2: {
+    title: 'АВР 2 степени',
+    description: 'Полностью автоматическая система. Автоматический запуск ДЭС и автоматическое переключение нагрузки на резервный источник.',
+    features: [
+      'Без участия персонала',
+      'Минимальное время простоя',
+      'Автоматический возврат на сеть',
+      'Интеллектуальный контроль ComAp'
+    ],
+    icon: <Zap className="w-8 h-8 text-brand-blue" />,
+    image: '/avr.png'
+  },
+  avr_3: {
+    title: 'АВР 3 степени',
+    description: 'Система с автоматической дозаправкой топливом и маслом, обеспечивающая длительную автономную работу объекта.',
+    features: [
+      'Максимальная автономность',
+      'Система подкачки топлива',
+      'Долив масла в картер',
+      'Расширенный мониторинг'
+    ],
+    icon: <Activity className="w-8 h-8 text-emerald-500" />,
+    image: '/avr.png'
+  },
+  manual: {
+    title: 'Ручной ввод резерва (РВР)',
+    description: 'Система ручного ввода резерва (РВР) реализована на базе реверсивного рубильника с тремя положениями (Сеть — 0 — ДГУ). Данное решение отличается исключительной надежностью и простотой эксплуатации. Переключение осуществляется оператором вручную при исчезновении напряжения в основной сети.',
+    features: [
+      'Визуальный разрыв цепи',
+      'Блокировка от одновременного включения двух источников',
+      'Простота конструкции и обслуживания',
+      'Минимальная стоимость решения',
+      'Высокая надежность и большой ресурс работы'
+    ],
+    icon: <Settings className="w-8 h-8" />,
+    image: '/input_file_3.png'
+  },
+  automatic: {
+    title: 'Автоматический ввод резерва (АВР)',
+    description: 'Система автоматического ввода резерва (АВР) обеспечивает непрерывность электроснабжения без участия персонала. Интеллектуальный контроллер постоянно мониторит состояние основной сети и, при отклонении параметров от нормы, автоматически подает сигнал на запуск ДЭС и переключает на нее нагрузку.',
+    features: [
+      'Полностью автономная работа 24/7',
+      'Контроль фаз и защита от перекоса напряжений',
+      'Программируемые задержки времени переключения',
+      'Автоматический возврат на основную сеть при восстановлении питания',
+      'Индикация состояния сети и ДЭС на лицевой панели'
+    ],
+    icon: <Zap className="w-8 h-8" />,
+    image: '/input_file_4.png'
+  }
+};
+
 const Header = () => (
   <div className="relative w-full h-[180px] overflow-hidden mb-8 print:mb-4 group-container page-break-avoid">
     <img 
@@ -307,6 +410,14 @@ export default function App() {
 
   // Editor state
   const [clientName, setClientName] = useState('');
+  const [clientPersonName, setClientPersonName] = useState('');
+  const [validUntil, setValidUntil] = useState('');
+  const [coverLetter, setCoverLetter] = useState('');
+  const [additionalOptions, setAdditionalOptions] = useState<AdditionalOption[]>([]);
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({ address: '', price: 0, isIncluded: false });
+  const [commissioningInfo, setCommissioningInfo] = useState<CommissioningInfo>({ location: '', price: 0, isIncluded: false });
+  const [reserveInputType, setReserveInputType] = useState<'no_avr' | 'avr_1' | 'avr_2' | 'avr_3' | 'manual' | 'automatic'>('no_avr');
+  
   const [isTwoStations, setIsTwoStations] = useState(false);
   const [isThreeStations, setIsThreeStations] = useState(false);
   const [showCompanyInfo, setShowCompanyInfo] = useState(true);
@@ -336,8 +447,8 @@ export default function App() {
   });
 
   const [blocks, setBlocks] = useState<Block[]>([
-    { id: 'b1', type: 'header', isVisible: true },
     { id: 'b2', type: 'contacts', isVisible: true },
+    { id: 'b1', type: 'header', isVisible: true },
     { id: 'b3', type: 'client-info', isVisible: true },
     { id: 'b4', type: 'message', isVisible: true },
     { id: 'b5', type: 'purpose', isVisible: false },
@@ -345,6 +456,7 @@ export default function App() {
     { id: 'b7', type: 'comparison', isVisible: true },
     { id: 'b8', type: 'costs', isVisible: true },
     { id: 'b9', type: 'control-panel', isVisible: true },
+    { id: 'b13', type: 'reserve-input', isVisible: true },
     { id: 'b12', type: 'interactive-container', isVisible: true },
     { id: 'b10', type: 'about', isVisible: true },
     { id: 'b11', type: 'footer', isVisible: true },
@@ -441,6 +553,13 @@ export default function App() {
       if (resp.ok) {
         const data = await resp.json() as ProposalData;
         setClientName(data.clientName);
+        setClientPersonName(data.clientPersonName || '');
+        setValidUntil(data.validUntil || '');
+        setCoverLetter(data.coverLetter || '');
+        setAdditionalOptions(data.additionalOptions || []);
+        setDeliveryInfo(data.deliveryInfo || { address: '', price: 0, isIncluded: false });
+        setCommissioningInfo(data.commissioningInfo || { location: '', price: 0, isIncluded: false });
+        setReserveInputType(data.reserveInputType || 'manual');
         setFuelPrice(data.fuelPrice);
         setToRate(data.toRate);
         setShowCompanyInfo(data.showCompanyInfo);
@@ -466,8 +585,8 @@ export default function App() {
         } else {
           // Initialize default blocks if missing
           setBlocks([
-            { id: 'b1', type: 'header', isVisible: true },
             { id: 'b2', type: 'contacts', isVisible: true },
+            { id: 'b1', type: 'header', isVisible: true },
             { id: 'b3', type: 'client-info', isVisible: true },
             { id: 'b4', type: 'message', isVisible: true },
             { id: 'b5', type: 'purpose', isVisible: data.usePurpose || false },
@@ -516,6 +635,13 @@ export default function App() {
 
     const data = {
       clientName,
+      clientPersonName,
+      validUntil,
+      coverLetter,
+      additionalOptions,
+      deliveryInfo,
+      commissioningInfo,
+      reserveInputType,
       slug,
       managerId: user.id,
       items,
@@ -641,6 +767,20 @@ export default function App() {
               user={user}
               clientName={clientName}
               setClientName={setClientName}
+              clientPersonName={clientPersonName}
+              setClientPersonName={setClientPersonName}
+              validUntil={validUntil}
+              setValidUntil={setValidUntil}
+              coverLetter={coverLetter}
+              setCoverLetter={setCoverLetter}
+              additionalOptions={additionalOptions}
+              setAdditionalOptions={setAdditionalOptions}
+              deliveryInfo={deliveryInfo}
+              setDeliveryInfo={setDeliveryInfo}
+              commissioningInfo={commissioningInfo}
+              setCommissioningInfo={setCommissioningInfo}
+              reserveInputType={reserveInputType}
+              setReserveInputType={setReserveInputType}
               isTwoStations={isTwoStations}
               setIsTwoStations={setIsTwoStations}
               isThreeStations={isThreeStations}
@@ -694,6 +834,14 @@ export default function App() {
               v1={station1.variant as any}
               v2={station2.variant as any}
               v3={station3.variant as any}
+              clientName={clientName}
+              clientPersonName={clientPersonName}
+              validUntil={validUntil}
+              coverLetter={coverLetter}
+              additionalOptions={additionalOptions}
+              deliveryInfo={deliveryInfo}
+              commissioningInfo={commissioningInfo}
+              reserveInputType={reserveInputType}
               onBack={() => setView('dashboard')}
               user={user}
               onUpdateBlocks={setBlocks}
@@ -724,6 +872,14 @@ export default function App() {
             v1={station1.variant as any}
             v2={station2.variant as any}
             v3={station3.variant as any}
+            clientName={clientName}
+            clientPersonName={clientPersonName}
+            validUntil={validUntil}
+            coverLetter={coverLetter}
+            additionalOptions={additionalOptions}
+            deliveryInfo={deliveryInfo}
+            commissioningInfo={commissioningInfo}
+            reserveInputType={reserveInputType}
             onBack={() => setView('dashboard')}
             isClientView
             user={user}
@@ -1019,7 +1175,14 @@ const AdminSidebar = ({
   usePurpose, setUsePurpose, purposeType, setPurposeType,
   manager, setManager, onSave, onBack, currentProposalId, currentProposalSlug,
   blocks, setBlocks,
-  loadedSpecs
+  loadedSpecs,
+  clientPersonName, setClientPersonName,
+  validUntil, setValidUntil,
+  coverLetter, setCoverLetter,
+  additionalOptions, setAdditionalOptions,
+  deliveryInfo, setDeliveryInfo,
+  commissioningInfo, setCommissioningInfo,
+  reserveInputType, setReserveInputType
 }: any) => {
   const [activeTab, setActiveTab] = useState<'settings' | 'blocks' | 'profile'>('settings');
 
@@ -1048,7 +1211,7 @@ const AdminSidebar = ({
 
       <div className="flex border-b border-doc-slate-50 bg-doc-slate-50">
         <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings className="w-4 h-4" />} label="КП" />
-        <TabButton active={activeTab === 'blocks'} onClick={() => setActiveTab('blocks')} icon={<Layers className="w-4 h-4" />} label="Блоки" />
+        {user?.role === 'admin' && <TabButton active={activeTab === 'blocks'} onClick={() => setActiveTab('blocks')} icon={<Layers className="w-4 h-4" />} label="Блоки" />}
         <TabButton active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} icon={<User className="w-4 h-4" />} label="Профиль" />
       </div>
 
@@ -1069,7 +1232,37 @@ const AdminSidebar = ({
                     placeholder="ООО 'Газпром'"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    className="admin-input font-bold"
+                    className="admin-input font-bold text-brand-blue"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-doc-slate-500 uppercase">Имя клиента</label>
+                  <input 
+                    placeholder="Иван Иванович"
+                    value={clientPersonName}
+                    onChange={(e) => setClientPersonName(e.target.value)}
+                    className="admin-input"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-doc-slate-500 uppercase">Действует до</label>
+                  <input 
+                    type="date"
+                    value={validUntil}
+                    onChange={(e) => setValidUntil(e.target.value)}
+                    className="admin-input"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-doc-slate-500 uppercase">Сопроводительное письмо</label>
+                  <textarea 
+                    placeholder="Введите текст приветствия..."
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    className="admin-input min-h-[100px] py-3 leading-relaxed"
                   />
                 </div>
 
@@ -1174,7 +1367,7 @@ const AdminSidebar = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-black text-doc-slate-500 uppercase">Топливо (руб/л)</label>
+                    <label className="text-[11px] font-black text-doc-slate-500 uppercase italic">Топливо (руб/л)</label>
                     <input 
                       type="number"
                       step="0.01"
@@ -1184,7 +1377,7 @@ const AdminSidebar = ({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-black text-doc-slate-500 uppercase">ТО (руб/час)</label>
+                    <label className="text-[11px] font-black text-doc-slate-500 uppercase italic">ТО (руб/час)</label>
                     <input 
                       type="number"
                       value={toRate}
@@ -1192,6 +1385,220 @@ const AdminSidebar = ({
                       className="admin-input"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-doc-slate-100">
+                  <div className="flex items-center justify-between">
+                     <p className="text-[11px] font-black text-brand-blue uppercase tracking-widest">Доп. опции и сервисы</p>
+                     <Settings className="w-4 h-4 text-brand-blue/30" />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {(additionalOptions || []).map((opt: AdditionalOption, i: number) => (
+                      <div key={opt.id} className="flex flex-col gap-2 p-3 bg-doc-slate-50 rounded-xl border border-doc-slate-200">
+                        <input 
+                          placeholder="Название опции"
+                          value={opt.name}
+                          onChange={(e) => {
+                            const newOpts = [...additionalOptions];
+                            newOpts[i].name = e.target.value;
+                            setAdditionalOptions(newOpts);
+                          }}
+                          className="admin-input text-[10px]"
+                        />
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="number"
+                            placeholder="Цена"
+                            value={opt.price || ''}
+                            onChange={(e) => {
+                              const newOpts = [...additionalOptions];
+                              newOpts[i].price = Number(e.target.value);
+                              setAdditionalOptions(newOpts);
+                            }}
+                            className="admin-input text-[10px] flex-1"
+                          />
+                          <button 
+                            onClick={() => {
+                              setAdditionalOptions(additionalOptions.filter((_, idx) => idx !== i));
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <div className={cn(
+                            "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                            opt.isIncluded ? "bg-brand-blue border-brand-blue" : "bg-white border-doc-slate-300 group-hover:border-brand-blue"
+                          )}>
+                            {opt.isIncluded && <CheckCircle2 className="w-3 h-3 text-white" />}
+                            <input 
+                              type="checkbox"
+                              className="hidden"
+                              checked={opt.isIncluded}
+                              onChange={(e) => {
+                                const newOpts = [...additionalOptions];
+                                newOpts[i].isIncluded = e.target.checked;
+                                setAdditionalOptions(newOpts);
+                              }}
+                            />
+                          </div>
+                          <span className="text-[9px] font-bold text-doc-slate-500 uppercase tracking-tighter">Включено в стоимость ДЭС</span>
+                        </label>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => setAdditionalOptions([...additionalOptions, { id: Date.now().toString(), name: '', price: 0, isIncluded: false }])}
+                      className="w-full py-3 border-2 border-dashed border-doc-slate-200 rounded-xl text-doc-slate-400 hover:border-brand-blue hover:text-brand-blue hover:bg-brand-blue/5 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase">Добавить опцию</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-doc-slate-100">
+                  <p className="text-[11px] font-black text-doc-slate-500 uppercase">Доставка</p>
+                  <input 
+                    placeholder="Адрес доставки / Пункт назначения"
+                    value={deliveryInfo?.address || ''}
+                    onChange={(e) => setDeliveryInfo({...deliveryInfo, address: e.target.value})}
+                    className="admin-input text-[10px]"
+                  />
+                  <input 
+                    type="number"
+                    placeholder="Стоимость доставки"
+                    value={deliveryInfo?.price || ''}
+                    onChange={(e) => setDeliveryInfo({...deliveryInfo, price: Number(e.target.value)})}
+                    className="admin-input text-[10px]"
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <div className={cn(
+                      "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                      deliveryInfo.isIncluded ? "bg-brand-blue border-brand-blue" : "bg-white border-doc-slate-300 group-hover:border-brand-blue"
+                    )}>
+                      {deliveryInfo.isIncluded && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      <input 
+                        type="checkbox"
+                        className="hidden"
+                        checked={deliveryInfo.isIncluded}
+                        onChange={(e) => setDeliveryInfo({...deliveryInfo, isIncluded: e.target.checked})}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold text-doc-slate-500 uppercase tracking-tighter">Включено в стоимость</span>
+                  </label>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-doc-slate-100">
+                  <p className="text-[11px] font-black text-doc-slate-500 uppercase">Пуско-наладочные работы (ПНР)</p>
+                  <input 
+                    placeholder="Место проведения ПНР"
+                    value={commissioningInfo?.location || ''}
+                    onChange={(e) => setCommissioningInfo({...commissioningInfo, location: e.target.value})}
+                    className="admin-input text-[10px]"
+                  />
+                  <input 
+                    type="number"
+                    placeholder="Стоимость ПНР"
+                    value={commissioningInfo?.price || ''}
+                    onChange={(e) => setCommissioningInfo({...commissioningInfo, price: Number(e.target.value)})}
+                    className="admin-input text-[10px]"
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <div className={cn(
+                      "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                      commissioningInfo.isIncluded ? "bg-brand-blue border-brand-blue" : "bg-white border-doc-slate-300 group-hover:border-brand-blue"
+                    )}>
+                      {commissioningInfo.isIncluded && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      <input 
+                        type="checkbox"
+                        className="hidden"
+                        checked={commissioningInfo.isIncluded}
+                        onChange={(e) => setCommissioningInfo({...commissioningInfo, isIncluded: e.target.checked})}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold text-doc-slate-500 uppercase tracking-tighter">Включено в стоимость</span>
+                  </label>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-doc-slate-100">
+                  <p className="text-[11px] font-black text-doc-slate-500 uppercase">Ввод резерва</p>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-doc-slate-100 rounded-xl overflow-hidden">
+                    <button 
+                      onClick={() => setReserveInputType('no_avr')}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2",
+                        reserveInputType === 'no_avr' ? "bg-white text-brand-blue shadow-sm" : "text-doc-slate-400 hover:text-doc-slate-600"
+                      )}
+                    >
+                      Без АВР
+                    </button>
+                    <button 
+                      onClick={() => setReserveInputType('avr_1')}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2",
+                        reserveInputType === 'avr_1' ? "bg-white text-brand-blue shadow-sm" : "text-doc-slate-400 hover:text-doc-slate-600"
+                      )}
+                    >
+                      АВР 1
+                    </button>
+                    <button 
+                      onClick={() => setReserveInputType('avr_2')}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2",
+                        reserveInputType === 'avr_2' ? "bg-white text-brand-blue shadow-sm" : "text-doc-slate-400 hover:text-doc-slate-600"
+                      )}
+                    >
+                      АВР 2
+                    </button>
+                    <button 
+                      onClick={() => setReserveInputType('avr_3')}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2",
+                        reserveInputType === 'avr_3' ? "bg-white text-brand-blue shadow-sm" : "text-doc-slate-400 hover:text-doc-slate-600"
+                      )}
+                    >
+                      АВР 3
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-doc-slate-100">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black text-doc-slate-500 uppercase tracking-widest">Назначение ДЭС</p>
+                    <button 
+                      onClick={() => {
+                        setUsePurpose(!usePurpose);
+                        const newBlocks = [...blocks];
+                        const idx = newBlocks.findIndex(b => b.type === 'purpose');
+                        if (idx !== -1) {
+                          newBlocks[idx].isVisible = !usePurpose;
+                          setBlocks(newBlocks);
+                        }
+                      }}
+                      className={cn(
+                        "relative w-10 h-5 rounded-full transition-colors",
+                        usePurpose ? 'bg-brand-blue' : 'bg-doc-slate-300'
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-1 w-3 h-3 bg-white rounded-full transition-transform",
+                        usePurpose ? 'left-6' : 'left-1'
+                      )} />
+                    </button>
+                  </div>
+                  {usePurpose && (
+                    <select 
+                      value={purposeType}
+                      onChange={(e) => setPurposeType(e.target.value as any)}
+                      className="admin-input text-xs font-bold"
+                    >
+                      {Object.entries(PURPOSES).map(([k, v]) => (
+                        <option key={k} value={k}>{v.label}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -1248,6 +1655,7 @@ const AdminSidebar = ({
                           block.type === 'client-info' ? 'Клиент и менеджер' :
                           block.type === 'message' ? 'Сопроводительное письмо' :
                           block.type === 'purpose' ? 'Назначение ДЭС' :
+                          block.type === 'reserve-input' ? 'Ввод резерва' :
                           block.type === 'specs' ? 'Технические параметры' :
                           block.type === 'comparison' ? 'Таблица сравнения' :
                           block.type === 'costs' ? 'Эксплуатационные расходы' :
@@ -1259,16 +1667,6 @@ const AdminSidebar = ({
                       </p>
                       <p className="text-[8px] text-doc-slate-400 font-bold uppercase tracking-widest">Блок #{index + 1}</p>
                     </div>
-                    
-                    {block.type === 'purpose' && (
-                      <select 
-                        value={purposeType}
-                        onChange={(e) => setPurposeType(e.target.value as any)}
-                        className="bg-white border border-doc-slate-200 text-[9px] font-bold py-1 px-2 rounded outline-none"
-                      >
-                        {Object.entries(PURPOSES).map(([k, v]) => <option key={k} value={k}>{v.label.slice(0, 10)}...</option>)}
-                      </select>
-                    )}
 
                     <button 
                       onClick={() => {
@@ -1573,7 +1971,12 @@ const PreviewArea = ({
   blocks, station1, station2, station3, p1, p2, p3, manager, fuelPrice, toRate, 
   showCompanyInfo, usePurpose, useControlPanel, purposeType, v1, v2, v3, 
   rec1, rec2, rec3, onBack, isClientView,
-  user, onUpdateBlocks
+  user, onUpdateBlocks,
+  clientName, clientPersonName, validUntil, coverLetter, 
+  additionalOptions = [], 
+  deliveryInfo = { address: '', price: 0, isIncluded: false }, 
+  commissioningInfo = { location: '', price: 0, isIncluded: false }, 
+  reserveInputType = 'manual'
 }: any) => {
   const [zoom, setZoom] = useState(1.25); 
   const [activeStationTab, setActiveStationTab] = useState(1);
@@ -1702,7 +2105,7 @@ const PreviewArea = ({
                   <InteractiveContainer 
                     config={block.config}
                     onUpdateConfig={(config) => updateBlockConfig(block.id, config)}
-                    isAdmin={user?.email === 'seo@comd.ru'}
+                    isAdmin={user?.role === 'admin'}
                   />
                 </div>
               );
@@ -1712,21 +2115,72 @@ const PreviewArea = ({
               return <div key={block.id} className="px-10 pt-8"><ContactsBar /></div>;
             case 'client-info':
               return (
-                <div key={block.id} className="px-10 pt-2 flex justify-between items-start page-break-avoid">
+                <div key={block.id} className="px-10 pt-2 flex justify-between items-start page-break-avoid relative">
                   <div className="space-y-4 flex-1">
                     <div className="text-[10px] text-doc-slate-500 leading-relaxed text-left px-6 py-4 bg-doc-slate-50 rounded-sm border-l-4 border-brand-blue font-medium italic uppercase max-w-sm">
                       Дизельные электростанции в данном предложении спроектированы для обеспечения максимальной надежности 
                       в самых суровых российских условиях. {station2 ? 'Сравнение представленных моделей позволит выбрать оптимальное решение.' : ''}
                     </div>
-                    <h1 className="text-2xl font-black text-brand-blue uppercase tracking-tighter border-b border-doc-slate-100 pb-2">
-                      Коммерческое предложение
-                    </h1>
+                    <div className="flex flex-col">
+                       <h1 className="text-2xl font-black text-brand-blue uppercase tracking-tighter border-b border-doc-slate-100 pb-2">
+                        Коммерческое предложение
+                       </h1>
+                       {coverLetter && (
+                         <div className="mt-4 p-4 bg-emerald-50/30 border-l-2 border-emerald-500/20 text-[10px] text-doc-slate-600 italic leading-relaxed whitespace-pre-wrap">
+                            {coverLetter}
+                         </div>
+                       )}
+                    </div>
                   </div>
-                  <ManagerBadge manager={manager} />
+                  <div className="flex flex-col items-end pt-4 min-w-[240px]">
+                     <div className="text-right">
+                       <p className="text-[7px] text-doc-slate-400 font-black uppercase tracking-[0.2em] mb-1">Заказчик / Компания</p>
+                       <p className="text-sm font-black text-brand-blue uppercase tracking-tighter leading-none">{clientName || 'НАЗВАНИЕ КОМПАНИИ'}</p>
+                       {clientPersonName && <p className="text-[10px] font-bold text-doc-slate-800 mt-1 uppercase tracking-tight">{clientPersonName}</p>}
+                       {validUntil && (
+                         <div className="flex items-center gap-1.5 justify-end mt-4 text-[9px] font-bold text-doc-slate-400">
+                           <Calendar className="w-3 h-3" />
+                           <span>ДЕЙСТВИТЕЛЬНО ДО: <span className="text-brand-blue font-black">{new Date(validUntil).toLocaleDateString('ru-RU')}</span></span>
+                         </div>
+                       )}
+                     </div>
+                  </div>
                 </div>
               );
             case 'message':
-               return null; // Integrated into client-info for now
+               return null; 
+            case 'reserve-input':
+               return (
+                 <div key={block.id} className="px-10 page-break-avoid mt-8">
+                    <div className="flex flex-col md:flex-row gap-8 items-start border-t-2 border-doc-slate-100 pt-8">
+                       <div className="flex-1 space-y-4">
+                          <h3 className="text-xl font-black text-brand-blue uppercase leading-tight border-b-2 border-brand-blue pb-2 flex items-center gap-3">
+                            {RESERVE_INPUT_TEXT[reserveInputType as keyof typeof RESERVE_INPUT_TEXT].icon} 
+                            {RESERVE_INPUT_TEXT[reserveInputType as keyof typeof RESERVE_INPUT_TEXT].title}
+                          </h3>
+                          <p className="text-[12px] font-bold text-doc-slate-800 leading-relaxed italic border-l-2 border-accent-grey pl-4">
+                            {RESERVE_INPUT_TEXT[reserveInputType as keyof typeof RESERVE_INPUT_TEXT].description}
+                          </p>
+                          <div className="space-y-2 mt-4">
+                             {RESERVE_INPUT_TEXT[reserveInputType as keyof typeof RESERVE_INPUT_TEXT].features.map((f, i) => (
+                               <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-doc-slate-600">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-brand-blue/30" />
+                                  {f}
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                       <div className="w-full md:w-64 h-64 bg-white border border-doc-slate-100 rounded-xl overflow-hidden p-2 shadow-sm shrink-0">
+                          <img 
+                            src={RESERVE_INPUT_TEXT[reserveInputType as keyof typeof RESERVE_INPUT_TEXT].image} 
+                            className="w-full h-full object-contain"
+                            alt="Reserve Input"
+                            referrerPolicy="no-referrer"
+                          />
+                       </div>
+                    </div>
+                 </div>
+               );
             case 'purpose':
               return usePurpose && (
                 <div key={block.id} className="px-10 page-break-avoid bg-[#f8fafc] border border-doc-slate-100 p-6 rounded-sm text-[10px] text-doc-slate-700 leading-relaxed space-y-3 font-semibold text-justify mx-10">
@@ -1811,12 +2265,21 @@ const PreviewArea = ({
                     </div>
                   )}
 
-                  {/* Station 1 - Always visible in PDF or if active tab is 1 */}
                   <div className={cn(
                     "space-y-8",
                     (station2 || station3) ? (activeStationTab === 1 ? "block" : "hidden print:block") : "block"
                   )}>
-                     <SpecSection label={station1.name} model={station1} variant={v1} price={p1} hideLabelWeb={!!(station2 || station3)} recommended={rec1} />
+                     <SpecSection 
+                        label={station1.name} 
+                        model={station1} 
+                        variant={v1} 
+                        price={p1} 
+                        hideLabelWeb={!!(station2 || station3)} 
+                        recommended={rec1}
+                        additionalOptions={additionalOptions}
+                        deliveryInfo={deliveryInfo}
+                        commissioningInfo={commissioningInfo}
+                     />
                   </div>
 
                   {/* Station 2 */}
@@ -1825,7 +2288,17 @@ const PreviewArea = ({
                       "space-y-8",
                       activeStationTab === 2 ? "block" : "hidden print:block"
                     )}>
-                      <SpecSection label={station2.name} model={station2} variant={v2} price={p2} hideLabelWeb={true} recommended={rec2} />
+                      <SpecSection 
+                        label={station2.name} 
+                        model={station2} 
+                        variant={v2} 
+                        price={p2} 
+                        hideLabelWeb={true} 
+                        recommended={rec2}
+                        additionalOptions={additionalOptions}
+                        deliveryInfo={deliveryInfo}
+                        commissioningInfo={commissioningInfo}
+                      />
                     </div>
                   )}
 
@@ -1835,7 +2308,17 @@ const PreviewArea = ({
                       "space-y-8",
                       activeStationTab === 3 ? "block" : "hidden print:block"
                     )}>
-                      <SpecSection label={station3.name} model={station3} variant={v3} price={p3} hideLabelWeb={true} recommended={rec3} />
+                      <SpecSection 
+                        label={station3.name} 
+                        model={station3} 
+                        variant={v3} 
+                        price={p3} 
+                        hideLabelWeb={true} 
+                        recommended={rec3}
+                        additionalOptions={additionalOptions}
+                        deliveryInfo={deliveryInfo}
+                        commissioningInfo={commissioningInfo}
+                      />
                     </div>
                   )}
                 </div>
@@ -1892,25 +2375,46 @@ const PreviewArea = ({
               return null;
           }
         })}
+        
+        {/* Removed duplicate global options/delivery block as it is now in each spec section */}
       </div>
     </div>
   </div>
       
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3 no-print z-50">
-         <button 
-          onClick={handlePrint}
-          className="w-14 h-14 bg-white text-brand-blue border border-brand-blue/20 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
-          title="Печать"
-         >
-           <Printer className="w-6 h-6" />
-         </button>
-         <button 
-          onClick={handleDownloadPdf}
-          className="w-14 h-14 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
-          title="Скачать PDF"
-         >
-           <Download className="w-6 h-6" />
-         </button>
+      <div className="fixed bottom-6 right-6 flex flex-col items-end gap-6 no-print z-50">
+         <div className="flex flex-row gap-3">
+           <button 
+            onClick={handlePrint}
+            className="w-14 h-14 bg-white text-brand-blue border border-brand-blue/20 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
+            title="Печать"
+           >
+             <Printer className="w-6 h-6 group-hover:rotate-6 transition-transform" />
+           </button>
+           <button 
+            onClick={handleDownloadPdf}
+            className="w-14 h-14 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
+            title="Скачать PDF"
+           >
+             <Download className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
+           </button>
+         </div>
+
+         <div className="bg-brand-blue px-8 py-4 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-5 group transition-all scale-125 origin-right">
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm bg-blue-800 relative shrink-0">
+               {manager.photoUrl ? (
+                 <img src={manager.photoUrl} alt="Manager" className="w-full h-full object-cover" />
+               ) : (
+                 <User className="w-7 h-7 text-white m-auto mt-3" />
+               )}
+               <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-full" />
+            </div>
+            <div className="text-left">
+               <p className="text-[7px] text-white/70 font-black uppercase tracking-[0.2em] leading-none mb-1">Ваш менеджер</p>
+               <p className="text-[12px] font-black text-white leading-tight mb-1">{manager.name || 'ВАШ МЕНЕДЖЕР'}</p>
+               <p className="text-[10px] font-bold text-white/90 leading-none">{manager.phone || '+7 (4852) 37-01-01'}</p>
+               <p className="text-[9px] font-medium text-white/70 mt-0.5">{manager.email || 'sales@comd.ru'}</p>
+            </div>
+         </div>
       </div>
     </main>
   );
@@ -2023,7 +2527,7 @@ const ControlPanelSection = () => (
   </div>
 );
 
-const SpecSection = ({ label, model, variant, price, hideLabelWeb, recommended }: { label: string, model: ModelSpec, variant: any, price?: number, hideLabelWeb?: boolean, recommended?: boolean }) => (
+const SpecSection = ({ label, model, variant, price, hideLabelWeb, recommended, additionalOptions = [], deliveryInfo = { price: 0, isIncluded: false }, commissioningInfo = { price: 0, isIncluded: false } }: { label: string, model: ModelSpec, variant: any, price?: number, hideLabelWeb?: boolean, recommended?: boolean, additionalOptions?: any[], deliveryInfo?: any, commissioningInfo?: any }) => (
   <div className="space-y-6 page-break-avoid relative">
     {recommended && (
       <div className="absolute -top-3 left-6 bg-brand-blue text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg z-20">
@@ -2044,37 +2548,52 @@ const SpecSection = ({ label, model, variant, price, hideLabelWeb, recommended }
           </div>
         )}
       </div>
-      {price && price > 0 && (
-        <div className="text-right flex flex-col items-end">
-          <div className="flex items-center gap-1.5 mb-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-brand-blue" />
-             <p className="text-[7px] font-bold uppercase text-doc-slate-500 tracking-wider">Итого с НДС 20%</p>
-          </div>
-          <p className="text-2xl font-bold text-brand-blue tracking-tighter leading-none italic">
-            {price.toLocaleString('ru-RU')} ₽
-          </p>
-        </div>
-      )}
     </div>
 
     {model.imageUrl && (
-      <div className="space-y-4">
-        <div className="relative w-full aspect-[16/9] bg-white border border-doc-slate-100 rounded shadow-sm overflow-hidden p-2">
-          <div className="absolute inset-0 bg-white pointer-events-none opacity-0" />
-          <img 
-            src={model.imageUrl} 
-            alt={model.name}
-            className="w-full h-full object-contain relative z-10"
-            referrerPolicy="no-referrer"
-                      />
-          <div className="absolute top-4 right-4 bg-brand-blue px-3 py-1 rounded-full">
-             <p className="text-[8px] text-white font-black uppercase tracking-widest">{model.nominalPowerKw} кВт</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-2 justify-center">
+           <div className="h-[1px] flex-1 bg-doc-slate-100" />
+           <span className="text-[9px] font-black text-brand-blue uppercase tracking-[0.4em] italic">Итоговая спецификация и услуги</span>
+           <div className="h-[1px] flex-1 bg-doc-slate-100" />
+        </div>
+
+        <div className="flex gap-6 items-start">
+          <div className="w-1/2">
+            <div className="relative w-full aspect-[16/9] bg-white border border-doc-slate-100 rounded shadow-sm overflow-hidden p-2">
+              <img 
+                src={model.imageUrl} 
+                alt={model.name}
+                className="w-full h-full object-contain relative z-10"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute top-4 right-4 bg-brand-blue px-3 py-1 rounded-full z-20">
+                 <p className="text-[8px] text-white font-black uppercase tracking-widest">{model.nominalPowerKw} кВт</p>
+              </div>
+            </div>
+          </div>
+          <div className="w-1/2">
+             <CostDetailsList 
+                additionalOptions={additionalOptions} 
+                deliveryInfo={deliveryInfo} 
+                commissioningInfo={commissioningInfo}
+                stationPrice={price || 0}
+                stationLabel={label}
+             />
           </div>
         </div>
+
+        <FinalTotalBar 
+           stationPrice={price || 0} 
+           additionalOptions={additionalOptions} 
+           deliveryInfo={deliveryInfo} 
+           commissioningInfo={commissioningInfo}
+        />
+
         <img 
           src="/input_file_4.png" 
           alt="Technical View" 
-          className="w-[50%] mx-auto h-auto rounded border border-doc-slate-100 shadow-sm" 
+          className="w-full h-auto rounded border border-doc-slate-100 shadow-sm" 
           referrerPolicy="no-referrer"
         />
       </div>
@@ -2224,6 +2743,102 @@ const FooterMini = () => (
     </div>
   </div>
 );
+
+const CostDetailsList = ({ stationPrice, additionalOptions, deliveryInfo, commissioningInfo, stationLabel }: any) => {
+  return (
+    <div className="space-y-3">
+      {/* Unit Cost */}
+      <div className="bg-doc-slate-50/50 p-3 rounded-lg border border-doc-slate-100 flex justify-between items-center transition-all hover:border-brand-blue/20">
+         <span className="text-[11px] font-black text-doc-slate-800 uppercase tracking-tight">Стоимость ДЭС {stationLabel}</span>
+         <span className="text-[12px] font-black text-brand-blue whitespace-nowrap ml-2 italic">{(stationPrice || 0).toLocaleString('ru-RU')} ₽</span>
+      </div>
+
+      {/* Additional Options Breakdown */}
+      <div className="bg-doc-slate-50/50 p-3 py-4 rounded-lg border border-doc-slate-100 space-y-3 h-full">
+         <h4 className="text-[9px] font-black text-doc-slate-400 uppercase tracking-[0.2em] border-b border-doc-slate-200 pb-2 mb-3">Дополнительные опции</h4>
+         {(additionalOptions || []).length > 0 ? (
+           <div className="space-y-2">
+             {additionalOptions.map((opt: any) => (
+               <div key={opt.id} className="flex justify-between items-start text-[10px] font-bold group">
+                 <span className="text-doc-slate-600 mr-4 break-words leading-tight">{opt.name}</span>
+                 {opt.isIncluded ? (
+                   <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-[4px] text-[8px] font-black uppercase whitespace-nowrap mt-0.5">включено</span>
+                 ) : (
+                   <span className="text-brand-blue font-black whitespace-nowrap italic mt-0.5">{(opt.price || 0).toLocaleString('ru-RU')} ₽</span>
+                 )}
+               </div>
+             ))}
+           </div>
+         ) : (
+           <p className="text-[10px] text-doc-slate-400 italic">Опции не выбраны</p>
+         )}
+      </div>
+
+      {/* Logistics and PNR */}
+      <div className="bg-doc-slate-50/50 p-3 py-4 rounded-lg border border-doc-slate-100 space-y-3">
+         <h4 className="text-[9px] font-black text-doc-slate-400 uppercase tracking-[0.2em] border-b border-doc-slate-200 pb-2 mb-3">Логистика и ПНР</h4>
+         <div className="space-y-2">
+           <div className="flex justify-between items-start text-[10px] font-bold">
+             <span className="text-doc-slate-600 mr-4 break-words leading-tight">Доставка: {deliveryInfo.address || '[город]'}</span>
+             {deliveryInfo.isIncluded ? (
+               <span className="text-emerald-600 font-extrabold text-[8px] uppercase whitespace-nowrap mt-0.5 italic">включено</span>
+             ) : (
+               <span className="text-brand-blue font-black whitespace-nowrap italic mt-0.5">{(deliveryInfo.price || 0).toLocaleString('ru-RU')} ₽</span>
+             )}
+           </div>
+           <div className="flex justify-between items-start text-[10px] font-bold">
+             <span className="text-doc-slate-600 mr-4 leading-tight">Шеф-монтаж / ПНР</span>
+             {commissioningInfo.isIncluded ? (
+               <span className="text-emerald-600 font-extrabold text-[8px] uppercase whitespace-nowrap mt-0.5 italic">включено</span>
+             ) : (
+               <span className="text-brand-blue font-black whitespace-nowrap italic mt-0.5">{(commissioningInfo.price || 0).toLocaleString('ru-RU')} ₽</span>
+             )}
+           </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+const FinalTotalBar = ({ stationPrice, additionalOptions, deliveryInfo, commissioningInfo }: any) => {
+  const optionsTotal = (additionalOptions || []).reduce((acc: number, o: any) => acc + (o.isIncluded ? 0 : (o.price || 0)), 0);
+  const optionsIncluded = (additionalOptions || []).reduce((acc: number, o: any) => acc + (o.isIncluded ? (o.price || 0) : 0), 0);
+  const logisticsPrice = (deliveryInfo.isIncluded ? 0 : (deliveryInfo.price || 0)) + (commissioningInfo.isIncluded ? 0 : (commissioningInfo.price || 0));
+  const total = stationPrice + optionsTotal + logisticsPrice;
+
+  return (
+    <div className="bg-brand-blue rounded-xl p-5 shadow-xl shadow-brand-blue/20 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 md:gap-12">
+      <div className="absolute top-0 right-0 w-64 h-full bg-white/5 skew-x-12 translate-x-24 -translate-y-12" />
+      
+      <div className="relative z-10 shrink-0">
+        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Общая сумма КП:</p>
+        <div className="flex items-baseline gap-1">
+           <span className="text-4xl font-black text-white italic tracking-tighter leading-none">{total.toLocaleString('ru-RU')}</span>
+           <span className="text-2xl font-black text-white">₽</span>
+        </div>
+        <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-2">{total > 0 ? 'Цена с НДС 20%' : 'Цена будет рассчитана'}</p>
+      </div>
+
+      <div className="flex-1 flex flex-wrap gap-x-12 gap-y-4 relative z-10 py-2 border-t md:border-t-0 md:border-l border-white/10 md:pl-12 w-full md:w-auto">
+        <div className="space-y-1">
+          <p className="text-[9px] font-black text-white/50 uppercase tracking-tight">в т.ч. доп. опций:</p>
+          <p className="text-[14px] font-black text-white italic">{optionsTotal.toLocaleString('ru-RU')} ₽</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-[9px] font-black text-white/50 uppercase tracking-tight">в т.ч. логистика:</p>
+          <p className="text-[14px] font-black text-white italic">{logisticsPrice.toLocaleString('ru-RU')} ₽</p>
+        </div>
+        
+        {optionsIncluded > 0 && (
+          <div className="space-y-1">
+            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tight">Экономия (включено):</p>
+            <p className="text-[14px] font-black text-emerald-400 italic">-{optionsIncluded.toLocaleString('ru-RU')} ₽</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SpecRow = ({ label, value }: { label: string, value: any }) => (
   <div className="flex gap-[2px] group">
